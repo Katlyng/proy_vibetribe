@@ -1,0 +1,3 @@
+{
+  "extends": "@proy_vibetribe/config/tsconfig.base.json"
+}
