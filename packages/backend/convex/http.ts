@@ -6,7 +6,7 @@ const http = httpRouter();
 
 authComponent.registerRoutesLazy(http, createAuth, {
   cors: true,
-  trustedOrigins: [process.env.SITE_URL!],
+  trustedOrigins: [process.env.SITE_URL || "http://localhost:3001"],
 });
 
 export default http;

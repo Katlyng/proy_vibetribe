@@ -29,10 +29,12 @@
   "dependencies": {
     "@proy_vibetribe/env": "workspace:*",
     "dotenv": "catalog:",
+    "vite-plugin-pwa": "^1.2.0",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@proy_vibetribe/config": "workspace:*",
+    "@types/node": "^25.6.0",
     "turbo": "^2.8.12",
     "typescript": "catalog:"
   },
