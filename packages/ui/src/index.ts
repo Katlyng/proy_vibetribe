@@ -12,7 +12,6 @@ export {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  ConfirmDialog,
 } from "./components/alert-dialog";
 export {
   DropdownMenu,

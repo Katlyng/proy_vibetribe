@@ -142,5 +142,3 @@ export function AlertDialogCancel({ className, onClick, children }: AlertDialogC
     </Button>
   );
 }
-
-export { AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel };
