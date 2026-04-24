@@ -10,7 +10,6 @@ import type { Doc } from "@proy_vibetribe/backend/convex/_generated/dataModel";
 
 interface PackageCardProps {
   package: Doc<"travelPackages">;
-  imageUrl?: string; // We can optional use this if we add images later
 }
 
 const formatPrice = (price: number) => {
@@ -25,17 +24,18 @@ const formatDate = (timestamp: number) => {
   return format(new Date(timestamp), "MMM d", { locale: es });
 };
 
-export function PackageCard({ package: pkg, imageUrl }: PackageCardProps) {
+export function PackageCard({ package: pkg }: PackageCardProps) {
   const availableSpots = pkg.maxParticipants - pkg.currentParticipants;
+  const hasImage = pkg.imageUrl && pkg.imageUrl.length > 0;
 
   return (
     <div className="mb-4 flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
       {/* Image Section */}
-      {imageUrl ? (
-        <img 
-          src={imageUrl} 
-          alt={pkg.title} 
-          className="h-48 w-full object-cover bg-muted" 
+      {hasImage ? (
+        <img
+          src={pkg.imageUrl}
+          alt={pkg.title}
+          className="h-48 w-full object-cover bg-muted"
         />
       ) : (
         <div className="flex h-48 w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
@@ -56,7 +56,7 @@ export function PackageCard({ package: pkg, imageUrl }: PackageCardProps) {
           </div>
           {/* Status Badge instead of rating since standard pkg schema doesn't have rating */}
           <Badge variant={pkg.status === "published" ? "default" : "secondary"} className="capitalize">
-            {pkg.status}
+            {pkg.statusLabel || pkg.status}
           </Badge>
         </div>
 

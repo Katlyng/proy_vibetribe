@@ -1,8 +1,9 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Authenticated, AuthLoading, Unauthenticated, useQuery } from "convex/react";
+import { Authenticated, AuthLoading, Unauthenticated, useQuery, useMutation } from "convex/react";
 import { useState, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Sparkles, MapPin } from "lucide-react";
+import { toast } from "sonner";
 
 import SignInForm from "@/components/sign-in-form";
 import SignUpForm from "@/components/sign-up-form";
@@ -23,10 +24,14 @@ export const Route = createFileRoute("/dashboard")({
 function PrivateDashboardContent() {
   const profile = useQuery(api.profiles.getMine);
   const packages = useQuery(api.packages.list, {});
+  const myPackages = useQuery(api.packages.getMine);
+  const seedMutation = useMutation(api.packages.seedMockPackages);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500000]);
+  const [isSeeding, setIsSeeding] = useState(false);
+  const [showMyPackages, setShowMyPackages] = useState(false);
 
   const filteredPackages = useMemo(() => {
     if (!packages) return [];
@@ -42,6 +47,18 @@ function PrivateDashboardContent() {
       return matchesSearch && matchesTag && matchesPrice;
     });
   }, [packages, searchQuery, selectedTag, priceRange]);
+
+  const handleSeedMocks = async () => {
+    setIsSeeding(true);
+    try {
+      await seedMutation({});
+      toast.success("¡Paquetes de ejemplo cargados!");
+    } catch (error: any) {
+      toast.error(error.message || "Error al cargar paquetes");
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-xl lg:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
@@ -75,9 +92,46 @@ function PrivateDashboardContent() {
           onPriceRangeChange={setPriceRange}
         />
 
+        {/* My Packages Toggle */}
+        {myPackages && myPackages.length > 0 && (
+          <Button
+            variant={showMyPackages ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowMyPackages(!showMyPackages)}
+            className="w-full gap-2"
+          >
+            <MapPin className="h-4 w-4" />
+            Mis Viajes ({myPackages.length})
+          </Button>
+        )}
+
+        {/* My Packages Section */}
+        {showMyPackages && myPackages && (
+          <div className="flex flex-col gap-3">
+            <h2 className="text-lg font-bold text-foreground">Mis Viajes Creados</h2>
+            <div className="flex flex-col gap-4">
+              {myPackages.map((pkg) => (
+                <PackageCard key={pkg._id} package={pkg} />
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Recommended list */}
         <div className="flex flex-col gap-3">
-          <h2 className="text-lg font-bold text-foreground">Paquetes Disponibles</h2>
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold text-foreground">Explorar Viajes</h2>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleSeedMocks}
+              disabled={isSeeding}
+              className="text-xs gap-1"
+            >
+              <Sparkles className="h-3 w-3" />
+              {isSeeding ? "Cargando..." : "Ejemplos"}
+            </Button>
+          </div>
           
           {packages === undefined ? (
             <div className="animate-pulse space-y-4">

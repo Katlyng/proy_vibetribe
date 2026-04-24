@@ -1,23 +1,23 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useMutation } from "convex/react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { 
-  User as UserIcon, 
-  MapPin, 
-  Star, 
-  Settings, 
-  LogOut, 
-  Package, 
-  Luggage, 
+import {
+  User as UserIcon,
+  MapPin,
+  Star,
+  Settings,
+  LogOut,
+  Package,
+  Luggage,
   Heart,
   ChevronRight,
   ShieldCheck,
   Bell,
   Camera,
   X,
-  Save
+  Save,
 } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
@@ -25,6 +25,7 @@ import { Button } from "@proy_vibetribe/ui/components/button";
 import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
 import { Input } from "@proy_vibetribe/ui/components/input";
 import { Label } from "@proy_vibetribe/ui/components/label";
+import { PageHeader } from "@/components/page-header";
 
 export const Route = createFileRoute("/profile")({
   component: ProfileScreen,
@@ -137,16 +138,8 @@ function ProfileScreen() {
   if (isEditing) {
     return (
       <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
-        <div className="px-5 py-6 flex flex-col gap-6">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h1 className="text-2xl font-bold">Mi Perfil</h1>
-              <p className="text-sm text-muted-foreground">Edita tu información personal.</p>
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setIsEditing(false)}>
-              <X className="h-6 w-6" />
-            </Button>
-          </div>
+        <PageHeader title="Editar Perfil" backTo="/profile" />
+        <div className="px-5 py-6 flex flex-col gap-5">
 
           <div className="bg-card border rounded-2xl p-6 shadow-sm flex flex-col gap-5">
             <div className="flex items-center gap-4">
@@ -213,7 +206,8 @@ function ProfileScreen() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
-      <div className="px-5 py-8 flex flex-col gap-6">
+      <PageHeader title="Mi Perfil" backTo="/dashboard" />
+      <div className="px-5 py-6 flex flex-col gap-6">
         
         {/* Header Profile */}
         <section className="flex flex-col items-center justify-center p-6 bg-card border rounded-2xl shadow-sm text-center">

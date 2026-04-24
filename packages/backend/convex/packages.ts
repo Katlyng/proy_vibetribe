@@ -2,6 +2,12 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
+const STATUS_LABELS: Record<string, string> = {
+  draft: "Borrador",
+  published: "Publicado",
+  cancelled: "Cancelado",
+};
+
 export const create = mutation({
   args: {
     destination: v.string(),
@@ -233,11 +239,30 @@ export const list = query({
         return {
           ...pkg,
           creatorInfo: creatorProfile,
+          statusLabel: STATUS_LABELS[pkg.status] || pkg.status,
         };
       })
     );
 
     return mappedResults;
+  },
+});
+
+export const getMine = query({
+  args: {},
+  handler: async (ctx) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const results = await ctx.db
+      .query("travelPackages")
+      .withIndex("by_creatorId", (q) => q.eq("creatorId", user._id))
+      .collect();
+
+    return results.map((pkg) => ({
+      ...pkg,
+      statusLabel: STATUS_LABELS[pkg.status] || pkg.status,
+    }));
   },
 });
 
@@ -352,6 +377,7 @@ export const getById = query({
       activities,
       participants,
       organizerInfo: organizerProfile,
+      statusLabel: STATUS_LABELS[tPackage.status] || tPackage.status,
     };
   },
 });
@@ -382,7 +408,7 @@ export const joinPackage = mutation({
       .first();
 
     if (existingParticipant) {
-      throw new Error("Already joined");
+      throw new Error("Ya estás inscrito en este viaje");
     }
 
     await ctx.db.insert("travelPackageParticipants", {

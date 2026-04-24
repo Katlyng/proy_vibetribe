@@ -14,6 +14,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as PackagesCreateRouteImport } from './routes/packages/create'
 import { Route as PackagesIdRouteImport } from './routes/packages/$id'
+import { Route as PackagesIdEditRouteImport } from './routes/packages/$id/edit'
 
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
@@ -40,28 +41,36 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
   path: '/packages/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PackagesIdEditRoute = PackagesIdEditRouteImport.update({
+  id: '/edit',
+  path: '/edit',
+  getParentRoute: () => PackagesIdRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
-  '/packages/$id': typeof PackagesIdRoute
+  '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
-  '/packages/$id': typeof PackagesIdRoute
+  '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
-  '/packages/$id': typeof PackagesIdRoute
+  '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -71,8 +80,15 @@ export interface FileRouteTypes {
     | '/profile'
     | '/packages/$id'
     | '/packages/create'
+    | '/packages/$id/edit'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/profile' | '/packages/$id' | '/packages/create'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/profile'
+    | '/packages/$id'
+    | '/packages/create'
+    | '/packages/$id/edit'
   id:
     | '__root__'
     | '/'
@@ -80,13 +96,14 @@ export interface FileRouteTypes {
     | '/profile'
     | '/packages/$id'
     | '/packages/create'
+    | '/packages/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   ProfileRoute: typeof ProfileRoute
-  PackagesIdRoute: typeof PackagesIdRoute
+  PackagesIdRoute: typeof PackagesIdRouteWithChildren
   PackagesCreateRoute: typeof PackagesCreateRoute
 }
 
@@ -127,14 +144,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/packages/$id/edit': {
+      id: '/packages/$id/edit'
+      path: '/edit'
+      fullPath: '/packages/$id/edit'
+      preLoaderRoute: typeof PackagesIdEditRouteImport
+      parentRoute: typeof PackagesIdRoute
+    }
   }
 }
+
+interface PackagesIdRouteChildren {
+  PackagesIdEditRoute: typeof PackagesIdEditRoute
+}
+
+const PackagesIdRouteChildren: PackagesIdRouteChildren = {
+  PackagesIdEditRoute: PackagesIdEditRoute,
+}
+
+const PackagesIdRouteWithChildren = PackagesIdRoute._addFileChildren(
+  PackagesIdRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   ProfileRoute: ProfileRoute,
-  PackagesIdRoute: PackagesIdRoute,
+  PackagesIdRoute: PackagesIdRouteWithChildren,
   PackagesCreateRoute: PackagesCreateRoute,
 }
 export const routeTree = rootRouteImport

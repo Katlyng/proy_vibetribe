@@ -1,7 +1,7 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowLeft, Calendar, MapPin, Users, Coins, Heart, Hand } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Coins, Pencil, Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -10,6 +10,8 @@ import { es } from "date-fns/locale";
 import { Button } from "@proy_vibetribe/ui/components/button";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
+import { PageHeader } from "@/components/page-header";
 
 export const Route = createFileRoute("/packages/$id")({
   component: PackageDetailsScreen,
@@ -18,8 +20,7 @@ export const Route = createFileRoute("/packages/$id")({
 function PackageDetailsScreen() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
-  // Call convex queries
-  const pkg = useQuery(api.packages.get, { id: id as any });
+  const pkg = useQuery(api.packages.getById, { id: id as any });
   const profile = useQuery(api.profiles.getMine);
   const joinMutation = useMutation(api.packages.joinPackage);
 
@@ -31,82 +32,98 @@ function PackageDetailsScreen() {
 
   if (pkg === null) {
     return (
-      <div className="flex h-[80vh] flex-col items-center justify-center gap-4 text-center">
-        <h2 className="text-2xl font-bold text-foreground">Paquete no encontrado</h2>
-        <p className="text-muted-foreground">El viaje que buscas no existe o ha sido eliminado.</p>
-        <Button onClick={() => navigate({ to: "/dashboard" })}>Volver al Dashboard</Button>
+      <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen">
+        <PageHeader title="Detalle del Viaje" backTo="/dashboard" />
+        <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center p-6">
+          <h2 className="text-2xl font-bold">Paquete no encontrado</h2>
+          <p className="text-muted-foreground">El viaje que buscas no existe o ha sido eliminado.</p>
+          <Button onClick={() => navigate({ to: "/dashboard" })}>Volver al Dashboard</Button>
+        </div>
       </div>
     );
   }
 
-  const isCreator = profile?._id === pkg.creatorId;
-  const isParticipant = false; // We can evaluate this with travelPackageParticipants
+  const isCreator = profile?.userId === pkg.creatorId;
+  const isParticipant = pkg.participants?.some((p: any) => p.userId === profile?.userId);
   const canJoin = !isCreator && !isParticipant && pkg.currentParticipants < pkg.maxParticipants && pkg.status === "published";
+  const isJoined = isCreator || isParticipant;
 
   const handleJoin = async () => {
     setIsJoining(true);
     try {
-      await joinMutation({ packageId: pkg._id });
+      await joinMutation({ travelPackageId: pkg._id as any });
       toast.success("¡Te has unido al viaje!");
     } catch (error: any) {
-      toast.error(error.message || "Error al unirse al paquete");
+      if (error.message?.includes("Ya estás")) {
+        toast.info("Ya estás inscrito en este viaje");
+      } else {
+        toast.error(error.message || "Error al unirse al paquete");
+      }
     } finally {
       setIsJoining(false);
     }
   };
 
   return (
-    <div className="mx-auto w-full max-w-3xl pb-24 md:pb-12 bg-background min-h-screen">
-      {/* Header Image Area */}
-      <div className="relative h-64 w-full bg-muted md:rounded-b-3xl overflow-hidden">
-        {/* Decorative background since we don't have images in DB by default */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/30 to-background/5" />
-        
-        {/* Top Navbar */}
-        <div className="absolute top-0 left-0 right-0 flex items-center justify-between p-4 bg-gradient-to-b from-black/50 to-transparent">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="rounded-full bg-background/20 text-white hover:bg-background/40 backdrop-blur-md"
-            onClick={() => window.history.back()}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div className="flex gap-2">
-            <Badge variant="secondary" className="backdrop-blur-md bg-background/50 border-none text-white">
-              {pkg.status}
+    <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen pb-24">
+      <PageHeader
+        title=""
+        backTo="/dashboard"
+        actions={
+          <>
+            {isCreator && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="rounded-full"
+                onClick={() => navigate({ to: "/packages/$id/edit", params: { id } })}
+              >
+                <Pencil className="h-5 w-5" />
+              </Button>
+            )}
+            <Badge variant="secondary" className="capitalize">
+              {pkg.statusLabel || pkg.status}
             </Badge>
-          </div>
+          </>
+        }
+      />
+
+      <div className="px-5 py-6 flex flex-col gap-6">
+        {/* Image */}
+        <div className="h-48 rounded-xl overflow-hidden bg-muted">
+          {pkg.imageUrl ? (
+            <img src={pkg.imageUrl} alt={pkg.title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/5" />
+          )}
         </div>
 
-        {/* Title overlay */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background to-transparent">
-          <h1 className="text-3xl font-bold text-foreground drop-shadow-md">{pkg.title}</h1>
-          <div className="flex items-center text-muted-foreground mt-2 gap-1 font-medium">
+        {/* Title */}
+        <div>
+          <h1 className="text-2xl font-bold">{pkg.title}</h1>
+          <div className="flex items-center text-muted-foreground mt-1 gap-1">
             <MapPin className="h-4 w-4" />
             <span>{pkg.destination}</span>
           </div>
         </div>
-      </div>
 
-      <div className="px-5 py-6 flex flex-col gap-6">
-        {/* Quick Stats Row */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-2 gap-3">
           <StatCard icon={<Calendar className="h-5 w-5" />} label="Duración" value={`${pkg.durationDays} días`} />
-          <StatCard icon={<Coins className="h-5 w-5" />} label="Precio" value={`$${pkg.price.toLocaleString("es-CO")}`} />
+          <StatCard icon={<Coins className="h-5 w-5" />} label="Precio" value={`$${pkg.price?.toLocaleString("es-CO") || 0}`} />
           <StatCard icon={<Users className="h-5 w-5" />} label="Cupos" value={`${pkg.currentParticipants}/${pkg.maxParticipants}`} />
-          <StatCard icon={<Heart className="h-5 w-5" />} label="Rating" value={"N/A"} />
+          <StatCard icon={<Star className="h-5 w-5" />} label="Rating" value={pkg.organizerInfo?.averageRating?.toFixed(1) || "N/A"} />
         </div>
 
         {/* Description */}
         <section>
-          <h2 className="text-xl font-bold mb-3">Acerca de esta aventura</h2>
+          <h2 className="text-lg font-bold mb-2">Acerca de esta aventura</h2>
           <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
             {pkg.description}
           </p>
         </section>
 
-        {/* Categories / Tags */}
+        {/* Tags */}
         {pkg.tags && pkg.tags.length > 0 && (
           <section>
             <h3 className="text-sm font-semibold text-muted-foreground mb-2 uppercase tracking-wider">Categorías</h3>
@@ -120,23 +137,23 @@ function PackageDetailsScreen() {
           </section>
         )}
 
-        {/* Date Details */}
-        <section className="bg-card border rounded-xl p-4 flex flex-col gap-3 shadow-sm">
-          <div className="flex items-center gap-2 text-foreground font-semibold">
+        {/* Dates */}
+        <section className="bg-card border rounded-xl p-4">
+          <div className="flex items-center gap-2 font-semibold mb-3">
             <Calendar className="h-5 w-5 text-primary" />
             <h3>Fechas del Viaje</h3>
           </div>
-          <div className="grid grid-cols-2 gap-4 divide-x">
-            <div className="flex flex-col gap-1 pr-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
               <span className="text-xs text-muted-foreground">IDA</span>
-              <span className="font-medium text-sm">
-                {format(new Date(pkg.startDate), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+              <span className="block font-medium text-sm">
+                {format(new Date(pkg.startDate), "MMM d, yyyy", { locale: es })}
               </span>
             </div>
-            <div className="flex flex-col gap-1 pl-4">
+            <div>
               <span className="text-xs text-muted-foreground">VUELTA</span>
-              <span className="font-medium text-sm">
-                {format(new Date(pkg.endDate), "EEEE, d 'de' MMMM yyyy", { locale: es })}
+              <span className="block font-medium text-sm">
+                {format(new Date(pkg.endDate), "MMM d, yyyy", { locale: es })}
               </span>
             </div>
           </div>
@@ -144,48 +161,100 @@ function PackageDetailsScreen() {
 
         {/* Accommodation */}
         {pkg.accommodation && (
-          <section className="bg-card border rounded-xl p-4 shadow-sm">
-            <h3 className="font-semibold mb-2">Alojamiento Incluido</h3>
+          <section className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-2">Alojamiento</h3>
             <p className="text-sm text-muted-foreground">{pkg.accommodation}</p>
-            {pkg.accommodationDetails && (
-              <div className="mt-3 text-sm">
-                <span className="font-medium">{pkg.accommodationDetails.name}</span>
-                <span className="block text-xs text-muted-foreground mt-1">
-                  ⭐ {pkg.accommodationDetails.rating}/5
-                </span>
-                <div className="flex gap-2 flex-wrap mt-2">
-                  {pkg.accommodationDetails.amenities?.map((am: string) => (
-                    <Badge variant="secondary" key={am} className="text-xs">{am}</Badge>
-                  ))}
-                </div>
-              </div>
-            )}
           </section>
         )}
 
+        {/* Activities */}
+        {pkg.activities && pkg.activities.length > 0 && (
+          <section className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-3">Actividades</h3>
+            <div className="space-y-2">
+              {pkg.activities.map((activity: any, idx: number) => (
+                <div key={activity._id || idx} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                  <span className="text-sm font-medium">{activity.title}</span>
+                  <Badge variant="outline" className="text-xs">
+                    {activity.isIncluded ? "Incluido" : `$${activity.cost}`}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Organizer */}
+        {pkg.organizerInfo && (
+          <section className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-3">Organizador</h3>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12">
+                <AvatarImage src={pkg.organizerInfo.avatarUrl} />
+                <AvatarFallback>{(pkg.organizerInfo.name || "O")[0]}</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-medium">{pkg.organizerInfo.name || "Organizador"}</p>
+                <div className="flex items-center gap-1 mt-1">
+                  <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                  <span className="text-xs">{pkg.organizerInfo.averageRating?.toFixed(1) || "5.0"}</span>
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Participants */}
+        {pkg.participants && pkg.participants.length > 0 && (
+          <section className="bg-card border rounded-xl p-4">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Participantes ({pkg.participants.length})
+            </h3>
+            <div className="space-y-2">
+              {pkg.participants.map((participant: any, idx: number) => (
+                <div key={participant.userId || idx} className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={participant.profileInfo?.avatarUrl} />
+                    <AvatarFallback className="text-sm">
+                      {(participant.profileInfo?.name || "P")[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="font-medium text-sm">
+                    {participant.profileInfo?.name || "Participante"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
 
-      {/* Fixed Bottom Action Bar */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t z-10 flex items-center justify-between gap-4 md:relative md:bg-transparent md:border-none md:mt-4 md:p-5">
-        <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground font-medium">Precio Total</span>
-          <span className="text-xl font-bold text-foreground">${pkg.price.toLocaleString("es-CO")}</span>
+      {/* Bottom Action */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t flex items-center justify-between gap-4">
+        <div>
+          <span className="text-xs text-muted-foreground">Precio Total</span>
+          <p className="text-xl font-bold">${pkg.price?.toLocaleString("es-CO")}</p>
         </div>
-        
+
         {isCreator ? (
-          <Button variant="secondary" className="px-8 rounded-full" disabled>
+          <Button variant="secondary" className="rounded-full" disabled>
             Eres el creador
           </Button>
+        ) : isJoined ? (
+          <Button variant="outline" className="rounded-full" disabled>
+            Ya estoy inscrito
+          </Button>
         ) : canJoin ? (
-          <Button 
-            className="px-8 rounded-full shadow-lg hover:shadow-xl transition-all" 
+          <Button
+            className="rounded-full shadow-md"
             onClick={handleJoin}
             disabled={isJoining}
           >
             {isJoining ? "Uniéndose..." : "Unirme al Viaje"}
           </Button>
         ) : (
-          <Button variant="outline" className="px-8 rounded-full bg-muted" disabled>
+          <Button variant="outline" className="rounded-full bg-muted" disabled>
             No disponible
           </Button>
         )}
@@ -194,11 +263,11 @@ function PackageDetailsScreen() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) {
+function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center justify-center p-3 bg-card border rounded-xl shadow-sm text-center gap-1">
+    <div className="flex flex-col items-center justify-center p-3 bg-card border rounded-xl text-center gap-1">
       <div className="text-primary mb-1">{icon}</div>
-      <span className="text-xs text-muted-foreground font-medium">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
       <span className="font-bold text-sm">{value}</span>
     </div>
   );
@@ -206,18 +275,18 @@ function StatCard({ icon, label, value }: { icon: React.ReactNode, label: string
 
 function PackageDetailsSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-3xl animate-pulse pb-24 h-screen">
-      <Skeleton className="h-64 w-full md:rounded-b-3xl" />
-      <div className="px-5 py-6 flex flex-col gap-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Skeleton className="h-24 rounded-xl" />
-          <Skeleton className="h-24 rounded-xl" />
+    <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen animate-pulse pb-24">
+      <div className="p-4 border-b">
+        <div className="h-10 w-10 bg-muted rounded-full" />
+      </div>
+      <div className="p-5 flex flex-col gap-6">
+        <div className="h-48 bg-muted rounded-xl" />
+        <div className="h-8 w-48 bg-muted rounded" />
+        <div className="grid grid-cols-2 gap-3">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
         </div>
-        <Skeleton className="h-8 w-48" />
         <Skeleton className="h-32 w-full" />
-        <Skeleton className="h-32 w-full rounded-xl" />
       </div>
     </div>
   );

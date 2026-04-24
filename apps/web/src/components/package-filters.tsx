@@ -1,4 +1,4 @@
-import { X } from "lucide-react";
+import { X, RotateCcw } from "lucide-react";
 import { Button } from "@proy_vibetribe/ui/components/button";
 import { Input } from "@proy_vibetribe/ui/components/input";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
@@ -14,13 +14,12 @@ interface PackageFiltersProps {
 
 const AVAILABLE_TAGS = [
   "playa",
-  "trekking",
+  "montaña",
+  "cultura",
+  "aventura",
+  "relax",
+  "gastronomía",
   "naturaleza",
-  "adventure",
-  "cultural",
-  "festival",
-  "desierto",
-  "buceo",
 ];
 
 export function PackageFilters({
@@ -31,17 +30,37 @@ export function PackageFilters({
   priceRange,
   onPriceRangeChange,
 }: PackageFiltersProps) {
+  const hasFilters = searchQuery || selectedTag || priceRange[0] > 0 || priceRange[1] < 500000;
+
+  const clearAllFilters = () => {
+    onSearchChange("");
+    onTagSelect(null);
+    onPriceRangeChange([0, 500000]);
+  };
+
   return (
     <div className="mb-4 flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm">
       {/* Search */}
       <div className="flex flex-col gap-2">
         <label className="text-sm font-semibold text-foreground">Buscar</label>
-        <Input
-          placeholder="Destino o paquete..."
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="bg-background"
-        />
+        <div className="relative">
+          <Input
+            placeholder="Destino o paquete..."
+            value={searchQuery}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="bg-background pr-10"
+          />
+          {searchQuery && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+              onClick={() => onSearchChange("")}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tags Filter */}
@@ -82,10 +101,19 @@ export function PackageFilters({
       <div className="flex flex-col gap-2">
         <div className="flex flex-row items-center justify-between">
           <label className="text-sm font-semibold text-foreground">Rango de Precio</label>
-          <span className="text-xs text-muted-foreground">
-            ${priceRange[0].toLocaleString("es-CO")} - ${priceRange[1].toLocaleString("es-CO")}
-          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onPriceRangeChange([0, 500000])}
+            className="h-7 px-2 text-xs text-muted-foreground"
+          >
+            <X className="mr-1 h-3 w-3" />
+            Limpiar
+          </Button>
         </div>
+        <span className="text-xs text-muted-foreground">
+          ${priceRange[0].toLocaleString("es-CO")} - ${priceRange[1].toLocaleString("es-CO")}
+        </span>
         <div className="flex flex-wrap gap-2 mt-1">
           <Button
             variant={priceRange[1] <= 200000 ? "default" : "outline"}
@@ -115,6 +143,19 @@ export function PackageFilters({
           </Button>
         </div>
       </div>
+
+      {/* Clear All Button */}
+      {hasFilters && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={clearAllFilters}
+          className="w-full mt-2"
+        >
+          <RotateCcw className="mr-2 h-4 w-4" />
+          Limpiar todos los filtros
+        </Button>
+      )}
     </div>
   );
 }

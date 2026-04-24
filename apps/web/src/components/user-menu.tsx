@@ -19,8 +19,13 @@ import { authClient } from "@/lib/auth-client";
 export default function UserMenu() {
   const navigate = useNavigate();
   const user = useQuery(api.auth.getCurrentUser);
+  const profile = useQuery(api.profiles.getMine);
 
   if (user === undefined) return <div className="h-10 w-10 animate-pulse bg-muted rounded-full" />;
+
+  const avatarUrl = profile?.avatarUrl || user?.image || "";
+  const displayName = profile?.name || user?.name || "Usuario";
+  const displayEmail = user?.email || "";
 
   return (
     <DropdownMenu>
@@ -28,26 +33,26 @@ export default function UserMenu() {
         <Button variant="ghost" className="relative h-10 w-10 rounded-full border border-border/50 shadow-sm p-0 overflow-hidden" />
       }>
         <Avatar className="h-full w-full">
-          <AvatarImage src={user?.image || ""} alt={user?.name || "Avatar"} />
+          <AvatarImage src={avatarUrl} alt={displayName} />
           <AvatarFallback className="bg-primary/10 text-primary font-medium">
-            {user?.name?.charAt(0).toUpperCase() || "U"}
+            {displayName.charAt(0).toUpperCase()}
           </AvatarFallback>
         </Avatar>
       </DropdownMenuTrigger>
-      
+
       <DropdownMenuContent className="w-56 bg-card" align="start" forceMount>
         <DropdownMenuGroup>
           <DropdownMenuLabel className="font-normal p-2">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none text-foreground">{user?.name}</p>
+              <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
               <p className="text-xs leading-none text-muted-foreground mt-1">
-                {user?.email}
+                {displayEmail}
               </p>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          
-          <DropdownMenuItem 
+
+          <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => navigate({ to: "/dashboard" })}
           >
@@ -55,7 +60,7 @@ export default function UserMenu() {
             Explorar Viajes
           </DropdownMenuItem>
 
-          <DropdownMenuItem 
+          <DropdownMenuItem
             className="cursor-pointer"
             onClick={() => navigate({ to: "/profile" })}
           >
