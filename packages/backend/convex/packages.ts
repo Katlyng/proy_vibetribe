@@ -353,20 +353,28 @@ export const getById = query({
 
     // BT-09: retorna perfil de cada participante desde la tabla `profiles`.
     // avatarUrl ✅ disponible via profileInfo.avatarUrl
-    // name ⚠️ NO está en la tabla profiles (vive en el componente interno de
-    //   betterAuth). No es accesible desde una query de Convex sin hacer
-    //   un lookup por usuario autenticado. El componente de UI usa fallback
-    //   de iniciales cuando profileInfo no tiene name.
+    // name ✅ obtenido directamente desde Better Auth con getAnyUserById
     const participants = await Promise.all(
       rawParticipants.map(async (p) => {
         const profile = await ctx.db
           .query("profiles")
           .withIndex("by_userId", (q) => q.eq("userId", p.userId))
           .first();
+
+        let name = "Viajero";
+        try {
+          const authUser = await authComponent.getAnyUserById(ctx, p.userId);
+          if (authUser && authUser.name) {
+            name = authUser.name;
+          }
+        } catch (e) {
+          // Fallback silencioso a "Viajero"
+        }
+
         return {
           userId: p.userId,
           joinedAt: p.joinedAt,
-          profileInfo: profile, // contiene avatarUrl, description, averageRating
+          profileInfo: profile ? { ...profile, name } : { name },
         };
       })
     );
@@ -376,11 +384,21 @@ export const getById = query({
       .withIndex("by_userId", (q) => q.eq("userId", tPackage.creatorId))
       .first();
 
+    let organizerName = "Organizador";
+    try {
+      const orgUser = await authComponent.getAnyUserById(ctx, tPackage.creatorId);
+      if (orgUser && orgUser.name) {
+        organizerName = orgUser.name;
+      }
+    } catch (e) {
+      // Fallback a "Organizador"
+    }
+
     return {
       ...tPackage,
       activities,
       participants,
-      organizerInfo: organizerProfile,
+      organizerInfo: organizerProfile ? { ...organizerProfile, name: organizerName } : { name: organizerName, averageRating: 5.0, avatarUrl: undefined },
       statusLabel: STATUS_LABELS[tPackage.status] || tPackage.status,
     };
   },
@@ -466,8 +484,9 @@ export const leavePackage = mutation({
     // IMPORTANTE: decrementar el contador explícitamente.
     // La reactividad de Convex actualiza las queries, pero NO los contadores
     // desnormalizados como currentParticipants.
+    const current = tPackage.currentParticipants || 0;
     await ctx.db.patch(args.travelPackageId, {
-      currentParticipants: Math.max(0, tPackage.currentParticipants - 1),
+      currentParticipants: Math.max(0, current - 1),
     });
 
     return true;
