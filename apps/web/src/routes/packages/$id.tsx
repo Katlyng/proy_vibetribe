@@ -268,30 +268,31 @@ function PackageDetailsScreen() {
           </Button>
         )}
 
-        {/* AlertDialog de confirmación para cancelar inscripción */}
-        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>¿Cancelar inscripción?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Estás a punto de abandonar el viaje{" "}
-                <strong>{pkg.title}</strong>. Si hay cupos limitados, perderás
-                tu lugar y puede que no puedas volver a inscribirte.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Volver</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleLeave}
-                disabled={isLeaving}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {isLeaving ? "Cancelando..." : "Sí, cancelar inscripción"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* AlertDialog de confirmación para cancelar inscripción */}
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Cancelar inscripción?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Estás a punto de abandonar el viaje{" "}
+              <strong>{pkg.title}</strong>. Si hay cupos limitados, perderás
+              tu lugar y puede que no puedas volver a inscribirte.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Volver</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLeave}
+              disabled={isLeaving}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isLeaving ? "Cancelando..." : "Sí, cancelar inscripción"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
