@@ -11,7 +11,18 @@ import { Button } from "@proy_vibetribe/ui/components/button";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@proy_vibetribe/ui/components/alert-dialog";
 import { PageHeader } from "@/components/page-header";
+import { ParticipantsList } from "@/components/participants-list";
 
 export const Route = createFileRoute("/packages/$id")({
   component: PackageDetailsScreen,
@@ -23,8 +34,11 @@ function PackageDetailsScreen() {
   const pkg = useQuery(api.packages.getById, { id: id as any });
   const profile = useQuery(api.profiles.getMine);
   const joinMutation = useMutation(api.packages.joinPackage);
+  const leaveMutation = useMutation(api.packages.leavePackage);
 
   const [isJoining, setIsJoining] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
 
   if (pkg === undefined || profile === undefined) {
     return <PackageDetailsSkeleton />;
@@ -46,7 +60,6 @@ function PackageDetailsScreen() {
   const isCreator = profile?.userId === pkg.creatorId;
   const isParticipant = pkg.participants?.some((p: any) => p.userId === profile?.userId);
   const canJoin = !isCreator && !isParticipant && pkg.currentParticipants < pkg.maxParticipants && pkg.status === "published";
-  const isJoined = isCreator || isParticipant;
 
   const handleJoin = async () => {
     setIsJoining(true);
@@ -61,6 +74,19 @@ function PackageDetailsScreen() {
       }
     } finally {
       setIsJoining(false);
+    }
+  };
+
+  const handleLeave = async () => {
+    setIsLeaving(true);
+    try {
+      await leaveMutation({ travelPackageId: pkg._id as any });
+      toast.success("Inscripción cancelada");
+    } catch (error: any) {
+      toast.error(error.message || "Error al cancelar la inscripción");
+    } finally {
+      setIsLeaving(false);
+      setShowCancelDialog(false);
     }
   };
 
@@ -205,29 +231,7 @@ function PackageDetailsScreen() {
         )}
 
         {/* Participants */}
-        {pkg.participants && pkg.participants.length > 0 && (
-          <section className="bg-card border rounded-xl p-4">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Participantes ({pkg.participants.length})
-            </h3>
-            <div className="space-y-2">
-              {pkg.participants.map((participant: any, idx: number) => (
-                <div key={participant.userId || idx} className="flex items-center gap-3">
-                  <Avatar className="h-10 w-10">
-                    <AvatarImage src={participant.profileInfo?.avatarUrl} />
-                    <AvatarFallback className="text-sm">
-                      {(participant.profileInfo?.name || "P")[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="font-medium text-sm">
-                    {participant.profileInfo?.name || "Participante"}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+        <ParticipantsList participants={pkg.participants ?? []} />
       </div>
 
       {/* Bottom Action */}
@@ -241,9 +245,14 @@ function PackageDetailsScreen() {
           <Button variant="secondary" className="rounded-full" disabled>
             Eres el creador
           </Button>
-        ) : isJoined ? (
-          <Button variant="outline" className="rounded-full" disabled>
-            Ya estoy inscrito
+        ) : isParticipant ? (
+          <Button
+            variant="destructive"
+            className="rounded-full"
+            onClick={() => setShowCancelDialog(true)}
+            disabled={isLeaving}
+          >
+            {isLeaving ? "Cancelando..." : "Cancelar inscripción"}
           </Button>
         ) : canJoin ? (
           <Button
@@ -258,6 +267,30 @@ function PackageDetailsScreen() {
             No disponible
           </Button>
         )}
+
+        {/* AlertDialog de confirmación para cancelar inscripción */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Cancelar inscripción?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Estás a punto de abandonar el viaje{" "}
+                <strong>{pkg.title}</strong>. Si hay cupos limitados, perderás
+                tu lugar y puede que no puedas volver a inscribirte.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Volver</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleLeave}
+                disabled={isLeaving}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isLeaving ? "Cancelando..." : "Sí, cancelar inscripción"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import { v } from "convex/values";
+import { v, ConvexError } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { authComponent } from "./auth";
 
@@ -351,18 +351,22 @@ export const getById = query({
       .withIndex("by_travelPackageId", (q) => q.eq("travelPackageId", args.id))
       .collect();
 
-    // Map organizers and participants profile info HU-09
+    // BT-09: retorna perfil de cada participante desde la tabla `profiles`.
+    // avatarUrl ✅ disponible via profileInfo.avatarUrl
+    // name ⚠️ NO está en la tabla profiles (vive en el componente interno de
+    //   betterAuth). No es accesible desde una query de Convex sin hacer
+    //   un lookup por usuario autenticado. El componente de UI usa fallback
+    //   de iniciales cuando profileInfo no tiene name.
     const participants = await Promise.all(
       rawParticipants.map(async (p) => {
         const profile = await ctx.db
           .query("profiles")
           .withIndex("by_userId", (q) => q.eq("userId", p.userId))
           .first();
-        // Look up the name from betterAuth as a fallback? Usually profiles should be enough 
         return {
           userId: p.userId,
           joinedAt: p.joinedAt,
-          profileInfo: profile,
+          profileInfo: profile, // contiene avatarUrl, description, averageRating
         };
       })
     );
@@ -386,18 +390,22 @@ export const joinPackage = mutation({
   args: { travelPackageId: v.id("travelPackages") },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    if (!user) throw new ConvexError("No autorizado");
     const userId = user._id;
 
     const tPackage = await ctx.db.get(args.travelPackageId);
-    if (!tPackage) throw new Error("Package not found");
+    if (!tPackage) throw new ConvexError("Paquete no encontrado");
+
+    if (tPackage.creatorId === userId) {
+      throw new ConvexError("No puedes unirte a tu propio paquete de viaje");
+    }
 
     if (tPackage.status !== "published") {
-      throw new Error("Package is not open for joining");
+      throw new ConvexError("Este paquete no está disponible para inscripciones");
     }
 
     if (tPackage.currentParticipants >= tPackage.maxParticipants) {
-      throw new Error("Package is full");
+      throw new ConvexError("Este paquete ya no tiene cupos disponibles");
     }
 
     const existingParticipant = await ctx.db
@@ -408,7 +416,7 @@ export const joinPackage = mutation({
       .first();
 
     if (existingParticipant) {
-      throw new Error("Ya estás inscrito en este viaje");
+      throw new ConvexError("Ya estás inscrito en este viaje");
     }
 
     await ctx.db.insert("travelPackageParticipants", {
@@ -419,6 +427,47 @@ export const joinPackage = mutation({
 
     await ctx.db.patch(args.travelPackageId, {
       currentParticipants: tPackage.currentParticipants + 1,
+    });
+
+    return true;
+  },
+});
+
+export const leavePackage = mutation({
+  args: { travelPackageId: v.id("travelPackages") },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) throw new ConvexError("No autorizado");
+    const userId = user._id;
+
+    const tPackage = await ctx.db.get(args.travelPackageId);
+    if (!tPackage) throw new ConvexError("Paquete no encontrado");
+
+    // El creador no puede abandonar su propio paquete
+    if (tPackage.creatorId === userId) {
+      throw new ConvexError("El creador no puede abandonar su propio paquete");
+    }
+
+    // Buscar la inscripción activa del usuario
+    const inscription = await ctx.db
+      .query("travelPackageParticipants")
+      .withIndex("by_package_and_user", (q) =>
+        q.eq("travelPackageId", args.travelPackageId).eq("userId", userId)
+      )
+      .first();
+
+    if (!inscription) {
+      throw new ConvexError("No estás inscrito en este paquete");
+    }
+
+    // Eliminar la inscripción
+    await ctx.db.delete(inscription._id);
+
+    // IMPORTANTE: decrementar el contador explícitamente.
+    // La reactividad de Convex actualiza las queries, pero NO los contadores
+    // desnormalizados como currentParticipants.
+    await ctx.db.patch(args.travelPackageId, {
+      currentParticipants: Math.max(0, tPackage.currentParticipants - 1),
     });
 
     return true;
