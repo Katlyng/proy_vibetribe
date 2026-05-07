@@ -6,7 +6,10 @@
   "author": "",
   "scripts": {
     "dev": "convex dev",
-    "dev:setup": "convex dev --configure --until-success"
+    "dev:setup": "convex dev --configure --until-success",
+    "test": "vitest",
+    "test:once": "vitest run",
+    "test:coverage": "vitest run --coverage --coverage.reporter=text"
   },
   "dependencies": {
     "@convex-dev/better-auth": "catalog:",
@@ -17,8 +20,11 @@
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@edge-runtime/vm": "^5.0.0",
     "@proy_vibetribe/config": "workspace:*",
     "@types/node": "^24.3.0",
-    "typescript": "catalog:"
+    "convex-test": "^0.0.51",
+    "typescript": "catalog:",
+    "vitest": "^4.1.5"
   }
 }
