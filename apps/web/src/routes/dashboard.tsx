@@ -41,7 +41,7 @@ function PrivateDashboardContent() {
         pkg.destination.toLowerCase().includes(searchQuery.toLowerCase()) ||
         pkg.description.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesTag = !selectedTag || (pkg.tags && pkg.tags.includes(selectedTag));
+      const matchesTag = !selectedTag || (pkg.tags && pkg.tags.some((t) => t.toLowerCase() === selectedTag.toLowerCase()));
       const matchesPrice = pkg.price >= priceRange[0] && pkg.price <= priceRange[1];
 
       return matchesSearch && matchesTag && matchesPrice;

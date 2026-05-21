@@ -1,7 +1,7 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
-import { ArrowLeft, Calendar, MapPin, Users, Coins, Pencil, Star } from "lucide-react";
+import { ArrowLeft, Calendar, MapPin, Users, Coins, Pencil, Star, Hotel } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -216,7 +216,7 @@ function PackageDetailsScreen() {
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="font-bold text-base">{activity.title}</h4>
                         <Badge variant={activity.isIncluded ? "secondary" : "outline"} className="text-[10px] shrink-0">
-                          {activity.isIncluded ? "Incluido" : `+$${activity.cost?.toLocaleString("es-CO")}`}
+                          {activity.isIncluded ? "Incluido" : `+ $${activity.cost?.toLocaleString("es-CO") || 0}`}
                         </Badge>
                       </div>
                       
@@ -233,6 +233,13 @@ function PackageDetailsScreen() {
                           </span>
                         </div>
                       </div>
+
+                      {activity.accommodation && (
+                        <div className="flex items-center gap-2 mt-1.5 text-sm bg-primary/5 rounded-lg p-2 border border-primary/10">
+                          <Hotel className="h-4 w-4 shrink-0 text-primary" />
+                          <span className="text-xs font-medium">{activity.accommodation}</span>
+                        </div>
+                      )}
 
                       {activity.description && (
                         <p className="text-sm mt-3 text-foreground/80 border-t pt-2 leading-relaxed">

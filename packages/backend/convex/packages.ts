@@ -38,6 +38,7 @@ export const create = mutation({
           isIncluded: v.boolean(),
           cost: v.optional(v.number()),
           imageUrl: v.optional(v.string()),
+          accommodation: v.optional(v.string()),
         })
       )
     ),
@@ -94,6 +95,7 @@ export const create = mutation({
           isIncluded: act.isIncluded,
           cost: act.cost,
           imageUrl: act.imageUrl,
+          accommodation: act.accommodation,
         });
       }
     }
@@ -183,6 +185,7 @@ export const addActivity = mutation({
       isIncluded: v.boolean(),
       cost: v.optional(v.number()),
       imageUrl: v.optional(v.string()),
+      accommodation: v.optional(v.string()),
     }),
   },
   handler: async (ctx, args) => {
@@ -208,6 +211,7 @@ export const addActivity = mutation({
       isIncluded: args.activity.isIncluded,
       cost: args.activity.cost,
       imageUrl: args.activity.imageUrl,
+      accommodation: args.activity.accommodation,
     });
   },
 });
@@ -224,6 +228,7 @@ export const updateActivity = mutation({
       isIncluded: v.optional(v.boolean()),
       cost: v.optional(v.number()),
       imageUrl: v.optional(v.string()),
+      accommodation: v.optional(v.string()),
     }),
   },
   handler: async (ctx, args) => {
@@ -249,6 +254,7 @@ export const updateActivity = mutation({
       isIncluded: args.activity.isIncluded ?? activity.isIncluded,
       cost: args.activity.cost !== undefined ? args.activity.cost : activity.cost,
       imageUrl: args.activity.imageUrl !== undefined ? args.activity.imageUrl : activity.imageUrl,
+      accommodation: args.activity.accommodation !== undefined ? args.activity.accommodation : activity.accommodation,
     });
 
     return true;

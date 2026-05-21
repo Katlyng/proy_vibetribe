@@ -4,12 +4,11 @@ import { es } from "date-fns/locale";
 import { MapPin, Users, Calendar, Star, Package as PackageIcon } from "lucide-react";
 
 import { Badge } from "@proy_vibetribe/ui/components/badge";
-import { Button } from "@proy_vibetribe/ui/components/button";
 
 import type { Doc } from "@proy_vibetribe/backend/convex/_generated/dataModel";
 
 interface PackageCardProps {
-  package: Doc<"travelPackages">;
+  package: Doc<"travelPackages"> & { statusLabel?: string };
 }
 
 const formatPrice = (price: number) => {
@@ -29,7 +28,11 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
   const hasImage = pkg.imageUrl && pkg.imageUrl.length > 0;
 
   return (
-    <div className="mb-4 flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden">
+    <Link
+      to="/packages/$id"
+      params={{ id: pkg._id }}
+      className="mb-4 flex flex-col rounded-lg border bg-card text-card-foreground shadow-sm overflow-hidden hover:ring-1 hover:ring-primary/30 transition-all cursor-pointer"
+    >
       {/* Image Section */}
       {hasImage ? (
         <img
@@ -54,7 +57,6 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
               <span className="text-sm text-muted-foreground">{pkg.destination}</span>
             </div>
           </div>
-          {/* Status Badge instead of rating since standard pkg schema doesn't have rating */}
           <Badge variant={pkg.status === "published" ? "default" : "secondary"} className="capitalize">
             {pkg.statusLabel || pkg.status}
           </Badge>
@@ -98,15 +100,12 @@ export function PackageCard({ package: pkg }: PackageCardProps) {
             <span className="text-xs text-muted-foreground">Precio por persona</span>
             <span className="text-lg font-bold text-primary">{formatPrice(pkg.price)}</span>
           </div>
-          
-          <Button asChild size="sm" className="px-6 rounded-full">
-            {/* The link to a detail page, we can assume /packages/$id */}
-            <Link to="/packages/$id" params={{ id: pkg._id }}>
-              Ver más
-            </Link>
-          </Button>
+
+          <span className="inline-flex items-center justify-center rounded-full bg-primary px-6 py-2 text-xs font-medium text-primary-foreground">
+            Ver más
+          </span>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -1,7 +1,7 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
 import { useMutation, useQuery } from "convex/react";
 import { useState, useRef } from "react";
-import { Plus, Pencil, Trash2, Camera, X, Check, MapPin, Map, Calendar, DollarSign, GripVertical } from "lucide-react";
+import { Plus, Pencil, Trash2, Camera, X, Check, MapPin, Map, Calendar, DollarSign, GripVertical, ChevronDown, ChevronUp } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 
@@ -27,20 +27,24 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
   const addMutation = useMutation(api.packages.addActivity);
   const updateMutation = useMutation(api.packages.updateActivity);
   const removeMutation = useMutation(api.packages.removeActivity);
+  const updatePackageMutation = useMutation(api.packages.update);
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   
   const [form, setForm] = useState({
     title: "",
     description: "",
     dateStr: "",
     location: "",
-    duration: "",
+    duration: "1 día",
     isIncluded: true,
     cost: 0,
     imageUrl: null as string | null,
+    accommodation: "",
+    increasePackagePrice: false,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,8 +63,11 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
       isIncluded: true,
       cost: 0,
       imageUrl: null,
+      accommodation: "",
+      increasePackagePrice: false,
     });
     setEditingId(null);
+    setShowAdvanced(false);
   };
 
   const handleEdit = (act: any) => {
@@ -73,8 +80,11 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
       isIncluded: act.isIncluded,
       cost: act.cost || 0,
       imageUrl: act.imageUrl || null,
+      accommodation: act.accommodation || "",
+      increasePackagePrice: false,
     });
     setEditingId(act._id);
+    setShowAdvanced(!!act.accommodation || (!act.isIncluded && (act.cost || 0) > 0));
     setIsDialogOpen(true);
   };
 
@@ -96,6 +106,18 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
     }
     setLoading(true);
     try {
+      if (form.dateStr && pkg.startDate && pkg.endDate) {
+        const startOfDay = new Date(pkg.startDate).setHours(0,0,0,0);
+        const endOfDay = new Date(pkg.endDate).setHours(23,59,59,999);
+        const aDate = new Date(form.dateStr + "T00:00:00").getTime();
+        
+        if (aDate < startOfDay || aDate > endOfDay) {
+          toast.error("La fecha de la parada debe estar entre el inicio y el fin del viaje.");
+          setLoading(false);
+          return;
+        }
+      }
+
       const dateNum = form.dateStr ? new Date(form.dateStr).getTime() : Date.now();
       
       if (editingId) {
@@ -110,6 +132,7 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
             isIncluded: form.isIncluded,
             cost: form.cost,
             imageUrl: form.imageUrl || undefined,
+            accommodation: form.accommodation || undefined,
           }
         });
         toast.success("Parada actualizada");
@@ -125,10 +148,20 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
             isIncluded: form.isIncluded,
             cost: form.cost,
             imageUrl: form.imageUrl || undefined,
+            accommodation: form.accommodation || undefined,
           }
         });
         toast.success("Parada añadida");
       }
+      if (!form.isIncluded && form.cost > 0 && form.increasePackagePrice && pkg.price !== undefined) {
+        await updatePackageMutation({
+          id: packageId,
+          price: pkg.price + form.cost
+        });
+        // We notify the user but reloading state should reflect the new price.
+        toast.info(`El precio del paquete ha aumentado en $${form.cost}`);
+      }
+
       setIsDialogOpen(false);
       resetForm();
     } catch (e: any) {
@@ -288,16 +321,45 @@ export function ActivitiesEditor({ packageId }: { packageId: any }) {
 
             <div className="flex items-center space-x-2 pt-2 border-t">
               <Checkbox id="included" checked={form.isIncluded} onCheckedChange={(c: boolean) => setForm(f => ({...f, isIncluded: c}))} />
-              <Label htmlFor="included" className="font-normal cursor-pointer">Incluido en el precio del paquete</Label>
+              <Label htmlFor="included" className="font-normal cursor-pointer">Actividad gratuita / Ya incluida en el precio base</Label>
             </div>
 
-            {!form.isIncluded && (
-              <div className="grid gap-2">
-                <Label>Costo adicional estimado (COP)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                  <Input type="number" placeholder="0" className="pl-6" value={form.cost || ""} onChange={e => setForm(f => ({...f, cost: Number(e.target.value)}))} />
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full flex items-center justify-between mt-2"
+              onClick={() => setShowAdvanced(!showAdvanced)}
+            >
+              <span className="text-sm font-medium">Opciones Adicionales</span>
+              {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+
+            {showAdvanced && (
+              <div className="grid gap-4 bg-muted/30 p-3 rounded-lg border border-dashed animate-in fade-in slide-in-from-top-2">
+                <div className="grid gap-2">
+                  <Label>Alojamiento específico (opcional)</Label>
+                  <Input placeholder="Ej. Hotel 4 estrellas en esta parada" value={form.accommodation} onChange={e => setForm(f => ({...f, accommodation: e.target.value}))} />
                 </div>
+
+                {!form.isIncluded && (
+                  <div className="grid gap-3 pt-2">
+                    <div className="grid gap-2">
+                      <Label>Costo adicional estimado (COP)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input type="number" placeholder="0" className="pl-6" value={form.cost || ""} onChange={e => setForm(f => ({...f, cost: Number(e.target.value)}))} />
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-start space-x-2">
+                      <Checkbox id="increasePackagePrice" checked={form.increasePackagePrice} onCheckedChange={(c: boolean) => setForm(f => ({...f, increasePackagePrice: c}))} />
+                      <div className="grid gap-1.5 leading-none">
+                        <Label htmlFor="increasePackagePrice" className="cursor-pointer font-medium">Sumar automáticamente al valor del viaje</Label>
+                        <p className="text-[11px] text-muted-foreground">Si marcas esto, el costo de esta parada se sumará al precio total del paquete de viaje y modificará el cobro actual.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>

@@ -3,7 +3,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { Save, Camera, X, Image as ImageIcon, Plus, Pencil, Trash2, MapPin, Calendar, Map } from "lucide-react";
+import { Save, Camera, X, Image as ImageIcon, Plus, Pencil, Trash2, MapPin, Calendar, Map, ChevronDown, ChevronUp } from "lucide-react";
 import { format } from "date-fns";
 
 import { Button } from "@proy_vibetribe/ui/components/button";
@@ -123,6 +123,7 @@ function CreatePackageScreen() {
   const [activities, setActivities] = useState<any[]>([]);
   const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
   const [editingActivityIndex, setEditingActivityIndex] = useState<number | null>(null);
+  const [showAdvancedAct, setShowAdvancedAct] = useState(false);
   const actFileInputRef = useRef<HTMLInputElement>(null);
 
   const [actForm, setActForm] = useState({
@@ -134,6 +135,8 @@ function CreatePackageScreen() {
     isIncluded: true,
     cost: 0,
     imageUrl: null as string | null,
+    accommodation: "",
+    increasePackagePrice: false,
   });
 
   const resetActForm = () => {
@@ -146,8 +149,11 @@ function CreatePackageScreen() {
       isIncluded: true,
       cost: 0,
       imageUrl: null,
+      accommodation: "",
+      increasePackagePrice: false,
     });
     setEditingActivityIndex(null);
+    setShowAdvancedAct(false);
   };
 
   const handleActImage = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,6 +190,17 @@ function CreatePackageScreen() {
       return;
     }
 
+    if (actForm.dateStr) {
+      if (!formData.startDateStr || !formData.endDateStr) {
+        toast.error("Por favor define primero las fechas de inicio y fin del paquete en la sección de Logística.");
+        return;
+      }
+      if (actForm.dateStr < formData.startDateStr || actForm.dateStr > formData.endDateStr) {
+        toast.error("La fecha de la parada debe estar entre el inicio y el fin del viaje.");
+        return;
+      }
+    }
+
     const newAct = {
       title: actForm.title,
       description: actForm.description,
@@ -193,6 +210,7 @@ function CreatePackageScreen() {
       isIncluded: actForm.isIncluded,
       cost: actForm.cost,
       imageUrl: actForm.imageUrl,
+      accommodation: actForm.accommodation || undefined,
     };
 
     if (editingActivityIndex !== null) {
@@ -201,6 +219,13 @@ function CreatePackageScreen() {
       setActivities(updated);
     } else {
       setActivities([...activities, newAct]);
+    }
+    
+    // Automatically increase package price if user checked the box and cost is > 0
+    if (!actForm.isIncluded && actForm.cost > 0 && actForm.increasePackagePrice) {
+      const newTotal = price + actForm.cost;
+      setPrice(newTotal);
+      setPriceDisplay(new Intl.NumberFormat("es-CO").format(newTotal));
     }
     
     setIsActivityDialogOpen(false);
@@ -218,8 +243,11 @@ function CreatePackageScreen() {
       isIncluded: act.isIncluded,
       cost: act.cost || 0,
       imageUrl: act.imageUrl || null,
+      accommodation: act.accommodation || "",
+      increasePackagePrice: false, // Reset this so they don't accidentally add the price again
     });
     setEditingActivityIndex(index);
+    setShowAdvancedAct(!!act.accommodation || (!act.isIncluded && (act.cost || 0) > 0));
     setIsActivityDialogOpen(true);
   };
 
@@ -587,16 +615,44 @@ function CreatePackageScreen() {
 
             <div className="flex items-center space-x-2 pt-2 border-t">
               <Checkbox id="included" checked={actForm.isIncluded} onCheckedChange={(c: boolean) => setActForm(f => ({...f, isIncluded: c}))} />
-              <Label htmlFor="included" className="font-normal cursor-pointer">Incluido en el precio del paquete</Label>
+              <Label htmlFor="included" className="font-normal cursor-pointer">Actividad gratuita / Ya incluida en el precio base</Label>
             </div>
 
-            {!actForm.isIncluded && (
-              <div className="grid gap-2">
-                <Label>Costo adicional estimado (COP)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
-                  <Input type="number" placeholder="0" className="pl-6" value={actForm.cost || ""} onChange={e => setActForm(f => ({...f, cost: Number(e.target.value)}))} />
+            <Button
+              type="button"
+              variant="ghost"
+              className="w-full flex items-center justify-between mt-2"
+              onClick={() => setShowAdvancedAct(!showAdvancedAct)}
+            >
+              <span className="text-sm font-medium">Opciones Adicionales</span>
+              {showAdvancedAct ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            </Button>
+
+            {showAdvancedAct && (
+              <div className="grid gap-4 bg-muted/30 p-3 rounded-lg border border-dashed animate-in fade-in slide-in-from-top-2">
+                <div className="grid gap-2">
+                  <Label>Alojamiento específico (opcional)</Label>
+                  <Input placeholder="Ej. Hotel 4 estrellas en esta parada" value={actForm.accommodation} onChange={e => setActForm(f => ({...f, accommodation: e.target.value}))} />
                 </div>
+
+                {!actForm.isIncluded && (
+                  <div className="grid gap-3 pt-2">
+                    <div className="grid gap-2">
+                      <Label>Costo adicional estimado (COP)</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                        <Input type="number" placeholder="0" className="pl-6" value={actForm.cost || ""} onChange={e => setActForm(f => ({...f, cost: Number(e.target.value)}))} />
+                      </div>
+                    </div>
+                    <div className="flex items-start space-x-2">
+                      <Checkbox id="increasePackagePrice" checked={actForm.increasePackagePrice} onCheckedChange={(c: boolean) => setActForm(f => ({...f, increasePackagePrice: c}))} />
+                      <div className="grid gap-1.5 leading-none">
+                        <Label htmlFor="increasePackagePrice" className="cursor-pointer font-medium">Sumar automáticamente al valor del viaje</Label>
+                        <p className="text-[11px] text-muted-foreground">Si marcas esto, el costo de esta parada se sumará al precio total del paquete de viaje.</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
