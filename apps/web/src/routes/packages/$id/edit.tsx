@@ -25,6 +25,8 @@ import { LocationInput } from "@/components/location-input";
 import { getGoogleMapsApiKey } from "@/lib/maps";
 import { PageHeader } from "@/components/page-header";
 
+import { ActivitiesEditor } from "@/components/activities-editor";
+
 export const Route = createFileRoute("/packages/$id/edit")({
   component: EditPackageScreen,
 });
@@ -170,7 +172,7 @@ function EditPackageScreen() {
         startDate: start,
         endDate: end,
         tags: formData.tags,
-        imageUrl: coverImage,
+        imageUrl: coverImage || undefined,
         accommodation: formData.accommodation || undefined,
       });
 
@@ -201,7 +203,7 @@ function EditPackageScreen() {
     return <EditPackageSkeleton />;
   }
 
-  const isCreator = profile?._id === pkg.creatorId;
+  const isCreator = profile?.userId === pkg?.creatorId;
 
   if (!isCreator && pkg) {
     return (
@@ -335,6 +337,8 @@ function EditPackageScreen() {
             ))}
           </div>
         </section>
+
+        <ActivitiesEditor packageId={id} />
 
         <section className="grid sm:grid-cols-2 gap-4 bg-card p-4 rounded-xl border shadow-sm">
           <h2 className="font-semibold text-foreground border-b pb-2 sm:col-span-2">Logística</h2>

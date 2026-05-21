@@ -193,17 +193,54 @@ function PackageDetailsScreen() {
           </section>
         )}
 
-        {/* Activities */}
+        {/* Itinerario */}
         {pkg.activities && pkg.activities.length > 0 && (
           <section className="bg-card border rounded-xl p-4">
-            <h3 className="font-semibold mb-3">Actividades</h3>
-            <div className="space-y-2">
-              {pkg.activities.map((activity: any, idx: number) => (
-                <div key={activity._id || idx} className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-                  <span className="text-sm font-medium">{activity.title}</span>
-                  <Badge variant="outline" className="text-xs">
-                    {activity.isIncluded ? "Incluido" : `$${activity.cost}`}
-                  </Badge>
+            <h3 className="font-semibold mb-4 text-lg">Itinerario de Viaje</h3>
+            <div className="relative border-l-2 border-primary/20 ml-3 md:ml-4 space-y-6 pb-2">
+              {[...pkg.activities].sort((a: any, b: any) => a.date - b.date).map((activity: any, idx: number) => (
+                <div key={activity._id || idx} className="relative pl-6">
+                  {/* Timeline Dot */}
+                  <span className="absolute -left-[11px] top-1 h-5 w-5 rounded-full bg-background border-2 border-primary flex items-center justify-center">
+                    <span className="h-2 w-2 rounded-full bg-primary" />
+                  </span>
+                  
+                  {/* Card content */}
+                  <div className="bg-muted/30 border rounded-xl overflow-hidden shadow-sm">
+                    {activity.imageUrl && (
+                      <div className="h-32 w-full bg-muted">
+                        <img src={activity.imageUrl} alt={activity.title} className="w-full h-full object-cover" />
+                      </div>
+                    )}
+                    <div className="p-4">
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <h4 className="font-bold text-base">{activity.title}</h4>
+                        <Badge variant={activity.isIncluded ? "secondary" : "outline"} className="text-[10px] shrink-0">
+                          {activity.isIncluded ? "Incluido" : `+$${activity.cost?.toLocaleString("es-CO")}`}
+                        </Badge>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1.5 mt-2 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-4 w-4 shrink-0" />
+                          <span className="line-clamp-1">{activity.location}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 shrink-0" />
+                          <span>
+                            {activity.date ? format(new Date(activity.date), "MMM d", { locale: es }) : ""}
+                            {activity.duration ? ` • ${activity.duration}` : ""}
+                          </span>
+                        </div>
+                      </div>
+
+                      {activity.description && (
+                        <p className="text-sm mt-3 text-foreground/80 border-t pt-2 leading-relaxed">
+                          {activity.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

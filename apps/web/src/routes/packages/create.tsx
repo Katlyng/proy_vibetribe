@@ -3,12 +3,23 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation } from "convex/react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { Save, Camera, X, Image as ImageIcon } from "lucide-react";
+import { Save, Camera, X, Image as ImageIcon, Plus, Pencil, Trash2, MapPin, Calendar, Map } from "lucide-react";
+import { format } from "date-fns";
 
 import { Button } from "@proy_vibetribe/ui/components/button";
 import { Input } from "@proy_vibetribe/ui/components/input";
 import { Label } from "@proy_vibetribe/ui/components/label";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
+import { Textarea } from "@proy_vibetribe/ui/components/textarea";
+import { Checkbox } from "@proy_vibetribe/ui/components/checkbox";
+import { Separator } from "@proy_vibetribe/ui/components/separator";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@proy_vibetribe/ui/components/dialog";
 import { LocationInput } from "@/components/location-input";
 import { getGoogleMapsApiKey } from "@/lib/maps";
 import { PageHeader } from "@/components/page-header";
@@ -109,6 +120,115 @@ function CreatePackageScreen() {
     setPrice(num);
   };
 
+  const [activities, setActivities] = useState<any[]>([]);
+  const [isActivityDialogOpen, setIsActivityDialogOpen] = useState(false);
+  const [editingActivityIndex, setEditingActivityIndex] = useState<number | null>(null);
+  const actFileInputRef = useRef<HTMLInputElement>(null);
+
+  const [actForm, setActForm] = useState({
+    title: "",
+    description: "",
+    dateStr: "",
+    location: "",
+    duration: "1 día",
+    isIncluded: true,
+    cost: 0,
+    imageUrl: null as string | null,
+  });
+
+  const resetActForm = () => {
+    setActForm({
+      title: "",
+      description: "",
+      dateStr: formData.startDateStr || "",
+      location: "",
+      duration: "1 día",
+      isIncluded: true,
+      cost: 0,
+      imageUrl: null,
+    });
+    setEditingActivityIndex(null);
+  };
+
+  const handleActImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("La imagen debe ser menor a 2MB");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const b64 = event.target?.result as string;
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } } 
+        else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext("2d")?.drawImage(img, 0, 0, w, h);
+        setActForm(f => ({ ...f, imageUrl: canvas.toDataURL("image/jpeg", 0.7) }));
+      };
+      img.src = b64;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const saveActivity = () => {
+    if (!actForm.title || !actForm.location) {
+      toast.error("Completa título y ubicación");
+      return;
+    }
+
+    const newAct = {
+      title: actForm.title,
+      description: actForm.description,
+      date: actForm.dateStr ? new Date(actForm.dateStr).getTime() : Date.now(),
+      location: actForm.location,
+      duration: actForm.duration,
+      isIncluded: actForm.isIncluded,
+      cost: actForm.cost,
+      imageUrl: actForm.imageUrl,
+    };
+
+    if (editingActivityIndex !== null) {
+      const updated = [...activities];
+      updated[editingActivityIndex] = newAct;
+      setActivities(updated);
+    } else {
+      setActivities([...activities, newAct]);
+    }
+    
+    setIsActivityDialogOpen(false);
+    resetActForm();
+  };
+
+  const editActivity = (index: number) => {
+    const act = activities[index];
+    setActForm({
+      title: act.title,
+      description: act.description,
+      dateStr: act.date ? format(new Date(act.date), "yyyy-MM-dd") : "",
+      location: act.location,
+      duration: act.duration,
+      isIncluded: act.isIncluded,
+      cost: act.cost || 0,
+      imageUrl: act.imageUrl || null,
+    });
+    setEditingActivityIndex(index);
+    setIsActivityDialogOpen(true);
+  };
+
+  const removeActivity = (index: number) => {
+    const updated = [...activities];
+    updated.splice(index, 1);
+    setActivities(updated);
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -136,6 +256,7 @@ function CreatePackageScreen() {
         tags: formData.tags,
         imageUrl: coverImage || undefined,
         accommodation: formData.accommodation || undefined,
+        activities: activities,
       });
 
       toast.success("¡Paquete de viaje creado exitosamente!");
@@ -260,6 +381,72 @@ function CreatePackageScreen() {
           </div>
         </section>
 
+        {/* Itinerary Editor */}
+        <section className="flex flex-col gap-4 bg-card p-4 rounded-xl border shadow-sm">
+          <div className="flex items-center justify-between border-b pb-2">
+            <h2 className="font-semibold text-foreground">Itinerario</h2>
+            <Button 
+              type="button"
+              variant="outline" 
+              size="sm" 
+              className="h-8 gap-1"
+              onClick={() => { resetActForm(); setIsActivityDialogOpen(true); }}
+            >
+              <Plus className="h-4 w-4" />
+              Añadir Parada
+            </Button>
+          </div>
+
+          <div className="flex flex-col gap-3 mt-2">
+            {activities.length === 0 ? (
+              <div className="text-center p-6 text-muted-foreground bg-muted/30 rounded-lg border border-dashed">
+                <Map className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No hay paradas en el itinerario aún.</p>
+                <p className="text-xs mt-1">Añade destinos o actividades para formar el pipeline.</p>
+              </div>
+            ) : (
+              activities.sort((a, b) => a.date - b.date).map((act, i) => (
+                <div key={i} className="flex gap-3 items-start group relative bg-background p-3 rounded-lg border shadow-sm">
+                  <div className="flex flex-col items-center mt-1">
+                    <div className="h-6 w-6 rounded-full bg-primary/20 text-primary flex items-center justify-center font-bold text-xs">
+                      {i + 1}
+                    </div>
+                    {i !== activities.length - 1 && (
+                      <Separator orientation="vertical" className="h-10 mt-1" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between">
+                      <h3 className="font-semibold text-sm line-clamp-1">{act.title}</h3>
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={() => editActivity(i)}>
+                          <Pencil className="h-3 w-3" />
+                        </Button>
+                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6 text-destructive hover:bg-destructive/10" onClick={() => removeActivity(i)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="flex items-center text-xs text-muted-foreground mt-1 gap-3">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" /> {act.location}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3" /> {act.date ? format(new Date(act.date), "MMM d") : ""}
+                      </span>
+                    </div>
+                  </div>
+                  {act.imageUrl && (
+                    <div className="h-12 w-12 rounded object-cover overflow-hidden bg-muted shrink-0">
+                      <img src={act.imageUrl} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+        </section>
+
         {/* Logistics Info */}
         <section className="grid sm:grid-cols-2 gap-4 bg-card p-4 rounded-xl border shadow-sm">
           <h2 className="font-semibold text-foreground border-b pb-2 sm:col-span-2">Logística</h2>
@@ -296,7 +483,7 @@ function CreatePackageScreen() {
               min="1"
               placeholder="10"
               value={formData.maxParticipants}
-              onChange={(e) => setFormData({...formData, maxParticipants: e.target.value})}
+              onChange={(e) => setFormData({...formData, maxParticipants: Number(e.target.value)})}
               required
             />
           </div>
@@ -341,6 +528,85 @@ function CreatePackageScreen() {
           </Button>
         </div>
       </form>
+
+      {/* Activity Modal */}
+      <Dialog open={isActivityDialogOpen} onOpenChange={setIsActivityDialogOpen}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>{editingActivityIndex !== null ? "Editar Parada" : "Añadir Parada"}</DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div
+              className="relative h-32 w-full rounded-lg border-2 border-dashed border-muted-foreground/25 overflow-hidden cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => actFileInputRef.current?.click()}
+            >
+              {actForm.imageUrl ? (
+                <>
+                  <img src={actForm.imageUrl} alt="Parada" className="h-full w-full object-cover" />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); setActForm(f => ({...f, imageUrl: null})); }}>
+                      <X className="h-4 w-4 mr-1" /> Remover
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground">
+                  <Camera className="h-8 w-8" />
+                  <p className="text-xs font-medium">Añadir foto de la parada</p>
+                </div>
+              )}
+              <input type="file" ref={actFileInputRef} onChange={handleActImage} accept="image/*" className="hidden" />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Título *</Label>
+              <Input placeholder="Ej. Llegada a París" value={actForm.title} onChange={e => setActForm(f => ({...f, title: e.target.value}))} />
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Ubicación *</Label>
+              <LocationInput apiKey={getGoogleMapsApiKey()} value={actForm.location} onChange={v => setActForm(f => ({...f, location: v}))} placeholder="Ej. Torre Eiffel, París" />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Fecha</Label>
+                <Input type="date" value={actForm.dateStr} onChange={e => setActForm(f => ({...f, dateStr: e.target.value}))} />
+              </div>
+              <div className="grid gap-2">
+                <Label>Duración</Label>
+                <Input placeholder="Ej. 2 horas" value={actForm.duration} onChange={e => setActForm(f => ({...f, duration: e.target.value}))} />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label>Descripción</Label>
+              <Textarea placeholder="Qué se hará en este punto..." value={actForm.description} onChange={e => setActForm(f => ({...f, description: e.target.value}))} />
+            </div>
+
+            <div className="flex items-center space-x-2 pt-2 border-t">
+              <Checkbox id="included" checked={actForm.isIncluded} onCheckedChange={(c: boolean) => setActForm(f => ({...f, isIncluded: c}))} />
+              <Label htmlFor="included" className="font-normal cursor-pointer">Incluido en el precio del paquete</Label>
+            </div>
+
+            {!actForm.isIncluded && (
+              <div className="grid gap-2">
+                <Label>Costo adicional estimado (COP)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">$</span>
+                  <Input type="number" placeholder="0" className="pl-6" value={actForm.cost || ""} onChange={e => setActForm(f => ({...f, cost: Number(e.target.value)}))} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsActivityDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={saveActivity}>Guardar Parada</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -10,12 +10,14 @@ import { query } from "./_generated/server";
 import authConfig from "./auth.config";
 
 const siteUrl = process.env.SITE_URL || "http://localhost:3001";
+// const baseUrl = process.env.VITE_CONVEX_SITE_URL;
 const resend = new Resend(components.resend, { testMode: false });
 
 export const authComponent = createClient<DataModel>(components.betterAuth);
 
 function createAuth(ctx: GenericCtx<DataModel>) {
   return betterAuth({
+    baseURL: process.env.CONVEX_SITE_URL,
     trustedOrigins: [siteUrl],
     database: authComponent.adapter(ctx),
     emailAndPassword: {
@@ -37,10 +39,10 @@ function createAuth(ctx: GenericCtx<DataModel>) {
             type === "forget-password"
               ? "recuperar tu contraseña"
               : type === "change-email"
-              ? "cambiar tu correo"
-              : type === "email-verification"
-              ? "verificar tu correo"
-              : "iniciar sesión";
+                ? "cambiar tu correo"
+                : type === "email-verification"
+                  ? "verificar tu correo"
+                  : "iniciar sesión";
 
           const subject = "Código de verificación de VibeTribe";
           const text = `Tu código para ${otpTypeLabel} es: ${otp}\n\nEste código expira en unos minutos. Si no solicitaste este código, ignora este mensaje.`;
@@ -54,7 +56,7 @@ function createAuth(ctx: GenericCtx<DataModel>) {
           `;
 
           await resend.sendEmail(ctx as any, {
-            from: "VibeTribe <vibetribe@elcokiin.my>", 
+            from: "VibeTribe <vibetribe@elcokiin.my>",
             to: email,
             subject,
             text,

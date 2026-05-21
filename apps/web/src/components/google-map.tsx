@@ -101,14 +101,7 @@ export function GoogleMap({
       >
         <Navigation className="h-10 w-10 text-muted-foreground/50 mb-3" />
         <p className="text-sm font-medium text-muted-foreground">
-          {error === "AGREGA_TU_GOOGLE_MAPS_API_KEY"
-            ? "📍 Google Maps"
-            : error}
-        </p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
-          {error === "AGREGA_TU_GOOGLE_MAPS_API_KEY"
-            ? "Agrega tu API Key de Google Maps"
-            : "Intenta nuevamente más tarde"}
+          {error === "AGREGA_TU_GOOGLE_MAPS_API_KEY" ? "📍 Google Maps" : error}
         </p>
       </div>
     );
@@ -130,3 +123,4 @@ export function GoogleMap({
 }
 
 export default GoogleMap;
+

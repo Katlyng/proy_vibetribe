@@ -62,6 +62,7 @@ export default defineSchema({
     duration: v.string(),
     isIncluded: v.boolean(),
     cost: v.optional(v.number()),
+    imageUrl: v.optional(v.string()),
   }).index("by_travelPackageId", ["travelPackageId"]),
 
   todos: defineTable({

@@ -27,6 +27,20 @@ export const create = mutation({
       })
     ),
     tags: v.optional(v.array(v.string())),
+    activities: v.optional(
+      v.array(
+        v.object({
+          title: v.string(),
+          description: v.string(),
+          date: v.number(),
+          location: v.string(),
+          duration: v.string(),
+          isIncluded: v.boolean(),
+          cost: v.optional(v.number()),
+          imageUrl: v.optional(v.string()),
+        })
+      )
+    ),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -67,6 +81,22 @@ export const create = mutation({
       userId: user._id,
       joinedAt: Date.now(),
     });
+
+    if (args.activities && args.activities.length > 0) {
+      for (const act of args.activities) {
+        await ctx.db.insert("travelPackageActivities", {
+          travelPackageId: packageId,
+          title: act.title,
+          description: act.description,
+          date: act.date,
+          location: act.location,
+          duration: act.duration,
+          isIncluded: act.isIncluded,
+          cost: act.cost,
+          imageUrl: act.imageUrl,
+        });
+      }
+    }
 
     return { id: packageId };
   },
@@ -152,6 +182,7 @@ export const addActivity = mutation({
       duration: v.string(),
       isIncluded: v.boolean(),
       cost: v.optional(v.number()),
+      imageUrl: v.optional(v.string()),
     }),
   },
   handler: async (ctx, args) => {
@@ -176,7 +207,72 @@ export const addActivity = mutation({
       duration: args.activity.duration,
       isIncluded: args.activity.isIncluded,
       cost: args.activity.cost,
+      imageUrl: args.activity.imageUrl,
     });
+  },
+});
+
+export const updateActivity = mutation({
+  args: {
+    activityId: v.id("travelPackageActivities"),
+    activity: v.object({
+      title: v.optional(v.string()),
+      description: v.optional(v.string()),
+      date: v.optional(v.number()),
+      location: v.optional(v.string()),
+      duration: v.optional(v.string()),
+      isIncluded: v.optional(v.boolean()),
+      cost: v.optional(v.number()),
+      imageUrl: v.optional(v.string()),
+    }),
+  },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const activity = await ctx.db.get(args.activityId);
+    if (!activity) throw new Error("Activity not found");
+
+    const tPackage = await ctx.db.get(activity.travelPackageId);
+    if (!tPackage) throw new Error("Package not found");
+
+    if (tPackage.creatorId !== user._id) {
+      throw new Error("Only the creator can update activities");
+    }
+
+    await ctx.db.patch(args.activityId, {
+      title: args.activity.title ?? activity.title,
+      description: args.activity.description ?? activity.description,
+      date: args.activity.date ?? activity.date,
+      location: args.activity.location ?? activity.location,
+      duration: args.activity.duration ?? activity.duration,
+      isIncluded: args.activity.isIncluded ?? activity.isIncluded,
+      cost: args.activity.cost !== undefined ? args.activity.cost : activity.cost,
+      imageUrl: args.activity.imageUrl !== undefined ? args.activity.imageUrl : activity.imageUrl,
+    });
+
+    return true;
+  },
+});
+
+export const removeActivity = mutation({
+  args: { activityId: v.id("travelPackageActivities") },
+  handler: async (ctx, args) => {
+    const user = await authComponent.safeGetAuthUser(ctx);
+    if (!user) throw new Error("Unauthorized");
+
+    const activity = await ctx.db.get(args.activityId);
+    if (!activity) throw new Error("Activity not found");
+
+    const tPackage = await ctx.db.get(activity.travelPackageId);
+    if (!tPackage) throw new Error("Package not found");
+
+    if (tPackage.creatorId !== user._id) {
+      throw new Error("Only the creator can delete activities");
+    }
+
+    await ctx.db.delete(args.activityId);
+    return true;
   },
 });
 
@@ -296,6 +392,8 @@ export const update = mutation({
     endDate: v.optional(v.number()),
     price: v.optional(v.number()),
     maxParticipants: v.optional(v.number()),
+    tags: v.optional(v.array(v.string())),
+    accommodation: v.optional(v.string()),
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled"))),
   },
   handler: async (ctx, args) => {
@@ -327,6 +425,8 @@ export const update = mutation({
       durationDays,
       price: args.price ?? tPackage.price,
       maxParticipants: args.maxParticipants ?? tPackage.maxParticipants,
+      tags: args.tags ?? tPackage.tags,
+      accommodation: args.accommodation !== undefined ? args.accommodation : tPackage.accommodation,
       status: args.status ?? tPackage.status,
       updatedAt: Date.now(),
     });
