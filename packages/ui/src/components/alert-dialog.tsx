@@ -1,6 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, createContext, useContext } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "./button";
+
+const AlertDialogContext = createContext<{ onOpenChange: (open: boolean) => void } | null>(null);
 
 interface AlertDialogProps {
   open: boolean;
@@ -42,7 +44,9 @@ export function AlertDialog({ open, onOpenChange, children }: AlertDialogProps) 
         onClick={() => onOpenChange(false)}
       />
       <div className="relative z-50 w-full max-w-md mx-4 bg-background rounded-xl border shadow-lg animate-in zoom-in-95 fade-in-0">
-        {children}
+        <AlertDialogContext.Provider value={{ onOpenChange }}>
+          {children}
+        </AlertDialogContext.Provider>
       </div>
     </div>
   );
@@ -136,8 +140,13 @@ interface AlertDialogCancelProps {
 }
 
 export function AlertDialogCancel({ className, onClick, children }: AlertDialogCancelProps) {
+  const context = useContext(AlertDialogContext);
+  const handleClick = () => {
+    if (onClick) onClick();
+    if (context) context.onOpenChange(false);
+  };
   return (
-    <Button variant="outline" onClick={onClick} className={`min-w-[100px] ${className || ""}`}>
+    <Button variant="outline" onClick={handleClick} className={`min-w-[100px] ${className || ""}`}>
       {children}
     </Button>
   );
