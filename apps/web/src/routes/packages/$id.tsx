@@ -1,5 +1,5 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Outlet, useMatchRoute } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, Calendar, MapPin, Users, Coins, Pencil, Star, Hotel } from "lucide-react";
 import { useState } from "react";
@@ -25,8 +25,20 @@ import { PageHeader } from "@/components/page-header";
 import { ParticipantsList } from "@/components/participants-list";
 
 export const Route = createFileRoute("/packages/$id")({
-  component: PackageDetailsScreen,
+  component: PackageLayoutRoute,
 });
+
+function PackageLayoutRoute() {
+  const matchRoute = useMatchRoute();
+  const isExactMatch = matchRoute({ to: "/packages/$id" });
+
+  // If we're on a child route (e.g. /edit), render only the child
+  if (!isExactMatch) {
+    return <Outlet />;
+  }
+
+  return <PackageDetailsScreen />;
+}
 
 function PackageDetailsScreen() {
   const { id } = Route.useParams();
