@@ -59,7 +59,7 @@ function PackageDetailsScreen() {
   if (pkg === null) {
     return (
       <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen">
-        <PageHeader title="Detalle del Viaje" backTo="/dashboard" />
+        <PageHeader title="Detalle del Viaje" />
         <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center p-6">
           <h2 className="text-2xl font-bold">Paquete no encontrado</h2>
           <p className="text-muted-foreground">El viaje que buscas no existe o ha sido eliminado.</p>
@@ -106,7 +106,6 @@ function PackageDetailsScreen() {
     <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen pb-24">
       <PageHeader
         title=""
-        backTo="/dashboard"
         actions={
           <>
             {isCreator && (

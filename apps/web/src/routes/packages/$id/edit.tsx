@@ -208,7 +208,7 @@ function EditPackageScreen() {
   if (!isCreator && pkg) {
     return (
       <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen">
-        <PageHeader title="Editar Viaje" backTo={`/packages/${id}`} />
+        <PageHeader title="Editar Viaje" />
         <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center p-6">
           <AlertTriangle className="h-12 w-12 text-destructive" />
           <h2 className="text-xl font-bold">No tienes permiso</h2>
@@ -222,7 +222,6 @@ function EditPackageScreen() {
     <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen">
       <PageHeader
         title="Editar Viaje"
-        backTo={`/packages/${id}`}
         actions={
           <Button
             variant="ghost"

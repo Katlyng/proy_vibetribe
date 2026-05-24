@@ -298,7 +298,7 @@ function CreatePackageScreen() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-background min-h-screen">
-      <PageHeader title="Crear Viaje" backTo="/dashboard" />
+      <PageHeader title="Crear Viaje" />
 
       <form onSubmit={handleCreate} className="p-5 flex flex-col gap-6">
         {/* Cover Image */}

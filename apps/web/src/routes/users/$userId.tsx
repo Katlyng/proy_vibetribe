@@ -26,7 +26,7 @@ function UserProfileScreen() {
   if (profile === null) {
     return (
       <div className="flex-1 w-full max-w-md mx-auto bg-background min-h-screen">
-        <PageHeader title="Perfil de Usuario" backTo="/dashboard" />
+        <PageHeader title="Perfil de Usuario" />
         <div className="flex h-[60vh] flex-col items-center justify-center gap-4 text-center p-6">
           <h2 className="text-2xl font-bold">Usuario no encontrado</h2>
           <p className="text-muted-foreground">El perfil que buscas no existe.</p>
@@ -37,7 +37,7 @@ function UserProfileScreen() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
-      <PageHeader title="Perfil de Viajero" backTo="/dashboard" />
+      <PageHeader title="Perfil de Viajero" />
       <div className="px-5 py-6 flex flex-col gap-6">
         
         {/* Header Profile */}

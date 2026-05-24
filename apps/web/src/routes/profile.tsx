@@ -138,7 +138,7 @@ function ProfileScreen() {
   if (isEditing) {
     return (
       <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
-        <PageHeader title="Editar Perfil" backTo="/profile" />
+        <PageHeader title="Editar Perfil" />
         <div className="px-5 py-6 flex flex-col gap-5">
 
           <div className="bg-card border rounded-2xl p-6 shadow-sm flex flex-col gap-5">
@@ -206,7 +206,7 @@ function ProfileScreen() {
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
-      <PageHeader title="Mi Perfil" backTo="/dashboard" />
+      <PageHeader title="Mi Perfil" />
       <div className="px-5 py-6 flex flex-col gap-6">
         
         {/* Header Profile */}
