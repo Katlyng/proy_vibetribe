@@ -403,41 +403,46 @@ export const update = mutation({
     status: v.optional(v.union(v.literal("draft"), v.literal("published"), v.literal("cancelled"))),
   },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) throw new Error("Unauthorized");
+    try {
+      const user = await authComponent.safeGetAuthUser(ctx);
+      if (!user) throw new ConvexError("Unauthorized");
 
-    const tPackage = await ctx.db.get(args.id);
-    if (!tPackage) throw new Error("Package not found");
+      const tPackage = await ctx.db.get(args.id);
+      if (!tPackage) throw new ConvexError("Package not found");
 
-    if (tPackage.creatorId !== user._id) {
-      throw new Error("Only the creator can edit this package");
+      if (tPackage.creatorId !== user._id) {
+        throw new ConvexError("Only the creator can edit this package");
+      }
+
+      const start = args.startDate ?? tPackage.startDate;
+      const end = args.endDate ?? tPackage.endDate;
+      
+      if (start >= end) {
+        throw new ConvexError("End date must be after start date");
+      }
+      const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+
+      await ctx.db.patch(args.id, {
+        destination: args.destination ?? tPackage.destination,
+        title: args.title ?? tPackage.title,
+        description: args.description ?? tPackage.description,
+        imageUrl: args.imageUrl !== undefined ? args.imageUrl : tPackage.imageUrl,
+        startDate: start,
+        endDate: end,
+        durationDays,
+        price: args.price ?? tPackage.price,
+        maxParticipants: args.maxParticipants ?? tPackage.maxParticipants,
+        tags: args.tags ?? tPackage.tags,
+        accommodation: args.accommodation !== undefined ? args.accommodation : tPackage.accommodation,
+        status: args.status ?? tPackage.status,
+        updatedAt: Date.now(),
+      });
+
+      return true;
+    } catch (e: any) {
+      if (e instanceof ConvexError) throw e;
+      throw new ConvexError(`DEBUG_ERROR: ${e.message || e}`);
     }
-
-    const start = args.startDate ?? tPackage.startDate;
-    const end = args.endDate ?? tPackage.endDate;
-    
-    if (start >= end) {
-      throw new Error("End date must be after start date");
-    }
-    const durationDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-
-    await ctx.db.patch(args.id, {
-      destination: args.destination ?? tPackage.destination,
-      title: args.title ?? tPackage.title,
-      description: args.description ?? tPackage.description,
-      imageUrl: args.imageUrl !== undefined ? args.imageUrl : tPackage.imageUrl,
-      startDate: start,
-      endDate: end,
-      durationDays,
-      price: args.price ?? tPackage.price,
-      maxParticipants: args.maxParticipants ?? tPackage.maxParticipants,
-      tags: args.tags ?? tPackage.tags,
-      accommodation: args.accommodation !== undefined ? args.accommodation : tPackage.accommodation,
-      status: args.status ?? tPackage.status,
-      updatedAt: Date.now(),
-    });
-
-    return true;
   },
 });
 
@@ -560,41 +565,46 @@ export const joinPackage = mutation({
 export const leavePackage = mutation({
   args: { travelPackageId: v.id("travelPackages") },
   handler: async (ctx, args) => {
-    const user = await authComponent.safeGetAuthUser(ctx);
-    if (!user) throw new ConvexError("No autorizado");
-    const userId = user._id;
+    try {
+      const user = await authComponent.safeGetAuthUser(ctx);
+      if (!user) throw new ConvexError("No autorizado");
+      const userId = user._id;
 
-    const tPackage = await ctx.db.get(args.travelPackageId);
-    if (!tPackage) throw new ConvexError("Paquete no encontrado");
+      const tPackage = await ctx.db.get(args.travelPackageId);
+      if (!tPackage) throw new ConvexError("Paquete no encontrado");
 
-    // El creador no puede abandonar su propio paquete
-    if (tPackage.creatorId === userId) {
-      throw new ConvexError("El creador no puede abandonar su propio paquete");
+      // El creador no puede abandonar su propio paquete
+      if (tPackage.creatorId === userId) {
+        throw new ConvexError("El creador no puede abandonar su propio paquete");
+      }
+
+      // Buscar la inscripción activa del usuario
+      const inscription = await ctx.db
+        .query("travelPackageParticipants")
+        .withIndex("by_package_and_user", (q) =>
+          q.eq("travelPackageId", args.travelPackageId).eq("userId", userId)
+        )
+        .first();
+
+      if (!inscription) {
+        throw new ConvexError("No estás inscrito en este paquete");
+      }
+
+      // Eliminar la inscripción
+      await ctx.db.delete(inscription._id);
+
+      // IMPORTANTE: decrementar el contador explícitamente.
+      // La reactividad de Convex actualiza las queries, pero NO los contadores
+      // desnormalizados como currentParticipants.
+      const current = tPackage.currentParticipants || 0;
+      await ctx.db.patch(args.travelPackageId, {
+        currentParticipants: Math.max(0, current - 1),
+      });
+
+      return true;
+    } catch (e: any) {
+      if (e instanceof ConvexError) throw e;
+      throw new ConvexError(`DEBUG_ERROR: ${e.message || e}`);
     }
-
-    // Buscar la inscripción activa del usuario
-    const inscription = await ctx.db
-      .query("travelPackageParticipants")
-      .withIndex("by_package_and_user", (q) =>
-        q.eq("travelPackageId", args.travelPackageId).eq("userId", userId)
-      )
-      .first();
-
-    if (!inscription) {
-      throw new ConvexError("No estás inscrito en este paquete");
-    }
-
-    // Eliminar la inscripción
-    await ctx.db.delete(inscription._id);
-
-    // IMPORTANTE: decrementar el contador explícitamente.
-    // La reactividad de Convex actualiza las queries, pero NO los contadores
-    // desnormalizados como currentParticipants.
-    const current = tPackage.currentParticipants || 0;
-    await ctx.db.patch(args.travelPackageId, {
-      currentParticipants: Math.max(0, current - 1),
-    });
-
-    return true;
   },
 });
