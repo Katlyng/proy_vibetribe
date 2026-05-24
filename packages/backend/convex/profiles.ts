@@ -86,3 +86,76 @@ export const updateMine = mutation({
     }
   },
 });
+
+export const getUserProfile = query({
+  args: {
+    userId: v.string(),
+  },
+  handler: async (ctx, args) => {
+    // 1. Fetch profile
+    const profile = await ctx.db
+      .query("profiles")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .first();
+
+    // 2. Fetch Better Auth info (if we have a way, or fallback to profile info)
+    // Here we use getAnyUserById to get the name and image
+    let name = "Viajero";
+    let avatarUrl = profile?.avatarUrl;
+    try {
+      const authUser = await authComponent.getAnyUserById(ctx, args.userId);
+      if (authUser) {
+        if (authUser.name) name = authUser.name;
+        if (!avatarUrl && authUser.image) avatarUrl = authUser.image;
+      }
+    } catch (e) {
+      // Ignore if auth fails
+    }
+
+    // 3. Fetch created packages
+    const createdPackagesRaw = await ctx.db
+      .query("travelPackages")
+      .withIndex("by_creatorId", (q) => q.eq("creatorId", args.userId))
+      .collect();
+    
+    // Remove cancelled packages from view and map statusLabel
+    const STATUS_LABELS: Record<string, string> = { draft: "Borrador", published: "Publicado", cancelled: "Cancelado" };
+    const createdPackages = createdPackagesRaw
+      .filter((pkg) => pkg.status !== "cancelled" && pkg.status !== "draft") // only show published ones to public
+      .map((pkg) => ({
+        ...pkg,
+        statusLabel: STATUS_LABELS[pkg.status] || pkg.status,
+      }));
+
+    // 4. Fetch packages they participate in
+    const participations = await ctx.db
+      .query("travelPackageParticipants")
+      .withIndex("by_userId", (q) => q.eq("userId", args.userId))
+      .collect();
+
+    const joinedPackagesRaw = [];
+    for (const p of participations) {
+      const pkg = await ctx.db.get(p.travelPackageId);
+      if (pkg && pkg.creatorId !== args.userId && pkg.status === "published") { // exclude their own packages to avoid duplication
+        joinedPackagesRaw.push(pkg);
+      }
+    }
+    
+    const joinedPackages = joinedPackagesRaw.map((pkg) => ({
+      ...pkg,
+      statusLabel: STATUS_LABELS[pkg.status] || pkg.status,
+    }));
+
+    return {
+      userId: args.userId,
+      name,
+      avatarUrl,
+      description: profile?.description || "",
+      favoriteDestinations: profile?.favoriteDestinations || [],
+      averageRating: profile?.averageRating || 5.0,
+      totalRatings: profile?.totalRatings || 0,
+      createdPackages,
+      joinedPackages,
+    };
+  },
+});

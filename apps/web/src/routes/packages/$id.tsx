@@ -1,5 +1,5 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
-import { createFileRoute, useNavigate, Outlet, useMatchRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Outlet, useMatchRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery } from "convex/react";
 import { ArrowLeft, Calendar, MapPin, Users, Coins, Pencil, Star, Hotel } from "lucide-react";
 import { useState } from "react";
@@ -270,19 +270,19 @@ function PackageDetailsScreen() {
         {pkg.organizerInfo && (
           <section className="bg-card border rounded-xl p-4">
             <h3 className="font-semibold mb-3">Organizador</h3>
-            <div className="flex items-center gap-3">
-              <Avatar className="h-12 w-12">
+            <Link to="/users/$userId" params={{ userId: pkg.creatorId }} className="flex items-center gap-3 group cursor-pointer">
+              <Avatar className="h-12 w-12 transition-transform group-hover:scale-105">
                 <AvatarImage src={pkg.organizerInfo.avatarUrl} />
                 <AvatarFallback>{(pkg.organizerInfo.name || "O")[0]}</AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium">{pkg.organizerInfo.name || "Organizador"}</p>
+                <p className="font-medium group-hover:text-primary transition-colors">{pkg.organizerInfo.name || "Organizador"}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
                   <span className="text-xs">{pkg.organizerInfo.averageRating?.toFixed(1) || "5.0"}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           </section>
         )}
 

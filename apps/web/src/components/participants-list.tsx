@@ -1,13 +1,7 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
 import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@proy_vibetribe/ui/components/dialog";
-import { Users, Star } from "lucide-react";
+import { Users } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 interface Participant {
   userId: string;
@@ -66,46 +60,22 @@ export function ParticipantsList({
           const averageRating = participant.profileInfo?.averageRating?.toFixed(1) || "5.0";
 
           return (
-            <Dialog key={participant.userId || idx}>
-              <DialogTrigger asChild>
-                <div className="flex flex-col items-center gap-1.5 min-w-[60px] flex-shrink-0 cursor-pointer group">
-                  <Avatar className="h-14 w-14 border-2 border-background shadow-sm transition-transform group-hover:scale-105">
-                    <AvatarImage src={avatarUrl} alt={name} />
-                    <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
-                      {fallbackInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="text-xs text-muted-foreground text-center truncate w-full max-w-[60px] group-hover:text-foreground transition-colors">
-                    {name.split(' ')[0]}
-                  </span>
-                </div>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-sm rounded-2xl">
-                <DialogHeader className="pt-2">
-                  <DialogTitle className="text-center">Perfil del Viajero</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col items-center gap-4 py-2">
-                  <Avatar className="h-24 w-24 border-4 border-background shadow-md">
-                    <AvatarImage src={avatarUrl} alt={name} />
-                    <AvatarFallback className="text-3xl font-bold bg-primary/10 text-primary">
-                      {fallbackInitial}
-                    </AvatarFallback>
-                  </Avatar>
-                  
-                  <div className="text-center space-y-1">
-                    <h3 className="text-xl font-bold text-foreground">{name}</h3>
-                    <div className="flex items-center justify-center gap-1 text-amber-500 font-medium">
-                      <span>{averageRating}</span>
-                      <Star className="h-4 w-4 fill-amber-500" />
-                    </div>
-                  </div>
-
-                  <div className="bg-muted/30 border rounded-xl p-4 w-full mt-2 text-sm text-center">
-                    <p className="text-muted-foreground italic">&quot;{description}&quot;</p>
-                  </div>
-                </div>
-              </DialogContent>
-            </Dialog>
+            <Link 
+              key={participant.userId || idx} 
+              to="/users/$userId" 
+              params={{ userId: participant.userId }}
+              className="flex flex-col items-center gap-1.5 min-w-[60px] flex-shrink-0 cursor-pointer group"
+            >
+              <Avatar className="h-14 w-14 border-2 border-background shadow-sm transition-transform group-hover:scale-105">
+                <AvatarImage src={avatarUrl} alt={name} />
+                <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
+                  {fallbackInitial}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground text-center truncate w-full max-w-[60px] group-hover:text-foreground transition-colors">
+                {name.split(' ')[0]}
+              </span>
+            </Link>
           );
         })}
       </div>

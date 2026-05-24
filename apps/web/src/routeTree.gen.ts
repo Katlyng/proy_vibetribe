@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as UsersUserIdRouteImport } from './routes/users/$userId'
 import { Route as PackagesCreateRouteImport } from './routes/packages/create'
 import { Route as PackagesIdRouteImport } from './routes/packages/$id'
 import { Route as PackagesIdEditRouteImport } from './routes/packages/$id/edit'
@@ -29,6 +30,11 @@ const DashboardRoute = DashboardRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const UsersUserIdRoute = UsersUserIdRouteImport.update({
+  id: '/users/$userId',
+  path: '/users/$userId',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PackagesCreateRoute = PackagesCreateRouteImport.update({
@@ -53,6 +59,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -61,6 +68,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRoutesById {
@@ -70,6 +78,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
+  '/users/$userId': typeof UsersUserIdRoute
   '/packages/$id/edit': typeof PackagesIdEditRoute
 }
 export interface FileRouteTypes {
@@ -80,6 +89,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/packages/$id'
     | '/packages/create'
+    | '/users/$userId'
     | '/packages/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/packages/$id'
     | '/packages/create'
+    | '/users/$userId'
     | '/packages/$id/edit'
   id:
     | '__root__'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/packages/$id'
     | '/packages/create'
+    | '/users/$userId'
     | '/packages/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -105,6 +117,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   PackagesIdRoute: typeof PackagesIdRouteWithChildren
   PackagesCreateRoute: typeof PackagesCreateRoute
+  UsersUserIdRoute: typeof UsersUserIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -128,6 +141,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/users/$userId': {
+      id: '/users/$userId'
+      path: '/users/$userId'
+      fullPath: '/users/$userId'
+      preLoaderRoute: typeof UsersUserIdRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/packages/create': {
@@ -172,6 +192,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   PackagesIdRoute: PackagesIdRouteWithChildren,
   PackagesCreateRoute: PackagesCreateRoute,
+  UsersUserIdRoute: UsersUserIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
