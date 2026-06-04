@@ -1,14 +1,17 @@
 import { api } from "@proy_vibetribe/backend/convex/_generated/api";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "convex/react";
-import { MapPin, Star, Luggage, Map, Calendar } from "lucide-react";
+import { useState } from "react";
+import { MapPin, Star, Luggage, Map, Calendar, Flag } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
+import { Button } from "@proy_vibetribe/ui/components/button";
 import { PageHeader } from "@/components/page-header";
+import { ReportUserDialog } from "@/components/report-user-dialog";
 
 export const Route = createFileRoute("/users/$userId")({
   component: UserProfileScreen,
@@ -18,6 +21,8 @@ function UserProfileScreen() {
   const { userId } = Route.useParams();
   const navigate = useNavigate();
   const profile = useQuery(api.profiles.getUserProfile, { userId });
+  const myProfile = useQuery(api.profiles.getMine);
+  const [showReportDialog, setShowReportDialog] = useState(false);
 
   if (profile === undefined) {
     return <UserProfileSkeleton />;
@@ -34,6 +39,13 @@ function UserProfileScreen() {
       </div>
     );
   }
+
+  const canReport =
+    !!myProfile &&
+    myProfile.userId !== userId;
+
+  const displayName = profile.name || "Viajero";
+  const reportButtonLabel = `Reportar a ${displayName.split(" ")[0]}`;
 
   return (
     <div className="flex-1 w-full max-w-md mx-auto md:max-w-2xl bg-muted/20 border-x min-h-screen pb-20">
@@ -74,6 +86,20 @@ function UserProfileScreen() {
               </div>
             </div>
           </div>
+
+          {canReport && (
+            <div className="mt-5 pt-5 border-t w-full flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-muted-foreground hover:text-destructive gap-1.5"
+                onClick={() => setShowReportDialog(true)}
+              >
+                <Flag className="h-3.5 w-3.5" />
+                {reportButtonLabel}
+              </Button>
+            </div>
+          )}
         </section>
 
         {/* Favorite Destinations */}
@@ -118,6 +144,15 @@ function UserProfileScreen() {
         )}
 
       </div>
+
+      {canReport && (
+        <ReportUserDialog
+          open={showReportDialog}
+          onOpenChange={setShowReportDialog}
+          reportedUserId={userId}
+          reportedUserName={displayName}
+        />
+      )}
     </div>
   );
 }

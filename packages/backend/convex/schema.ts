@@ -80,6 +80,30 @@ export default defineSchema({
     .index("by_package_and_rater", ["travelPackageId", "raterId"])
     .index("by_package_rater_and_rated", ["travelPackageId", "raterId", "ratedUserId"]),
 
+  userReports: defineTable({
+    reporterId: v.string(),
+    reportedUserId: v.string(),
+    reason: v.union(
+      v.literal("harassment"),
+      v.literal("offensive_language"),
+      v.literal("spam"),
+      v.literal("fraud"),
+      v.literal("rule_violation"),
+      v.literal("other")
+    ),
+    details: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("dismissed")
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_reporterId", ["reporterId"])
+    .index("by_reportedUserId", ["reportedUserId"])
+    .index("by_status", ["status"])
+    .index("by_reporter_and_reported", ["reporterId", "reportedUserId"]),
+
   todos: defineTable({
     text: v.string(),
     completed: v.boolean(),

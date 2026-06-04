@@ -15,6 +15,7 @@ import type * as packages from "../packages.js";
 import type * as privateData from "../privateData.js";
 import type * as profiles from "../profiles.js";
 import type * as ratings from "../ratings.js";
+import type * as reports from "../reports.js";
 import type * as sendEmails from "../sendEmails.js";
 import type * as todos from "../todos.js";
 
@@ -32,6 +33,7 @@ declare const fullApi: ApiFromModules<{
   privateData: typeof privateData;
   profiles: typeof profiles;
   ratings: typeof ratings;
+  reports: typeof reports;
   sendEmails: typeof sendEmails;
   todos: typeof todos;
 }>;
