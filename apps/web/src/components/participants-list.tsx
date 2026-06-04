@@ -47,8 +47,12 @@ export function ParticipantsList({
     name: string;
   } | null>(null);
 
+  const isCurrentUserParticipant = Boolean(
+    currentUserId && participants.some((p) => p.userId === currentUserId)
+  );
+
   const canRate = Boolean(
-    isFinished && travelPackageId && currentUserId
+    isFinished && travelPackageId && currentUserId && isCurrentUserParticipant
   );
 
   const myRatings = useQuery(
