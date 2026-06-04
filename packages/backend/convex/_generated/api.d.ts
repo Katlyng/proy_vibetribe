@@ -14,6 +14,7 @@ import type * as http from "../http.js";
 import type * as packages from "../packages.js";
 import type * as privateData from "../privateData.js";
 import type * as profiles from "../profiles.js";
+import type * as ratings from "../ratings.js";
 import type * as sendEmails from "../sendEmails.js";
 import type * as todos from "../todos.js";
 
@@ -30,6 +31,7 @@ declare const fullApi: ApiFromModules<{
   packages: typeof packages;
   privateData: typeof privateData;
   profiles: typeof profiles;
+  ratings: typeof ratings;
   sendEmails: typeof sendEmails;
   todos: typeof todos;
 }>;

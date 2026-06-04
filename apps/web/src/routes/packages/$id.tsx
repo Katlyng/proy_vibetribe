@@ -286,7 +286,12 @@ function PackageDetailsScreen() {
         )}
 
         {/* Participants */}
-        <ParticipantsList participants={pkg.participants ?? []} />
+        <ParticipantsList
+          participants={pkg.participants ?? []}
+          travelPackageId={pkg._id}
+          currentUserId={profile?.userId}
+          isFinished={pkg.isFinished}
+        />
       </div>
 
       {/* Bottom Action */}
