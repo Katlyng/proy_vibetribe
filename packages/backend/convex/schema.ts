@@ -66,6 +66,20 @@ export default defineSchema({
     accommodation: v.optional(v.string()),
   }).index("by_travelPackageId", ["travelPackageId"]),
 
+  packageRatings: defineTable({
+    travelPackageId: v.id("travelPackages"),
+    raterId: v.string(),
+    ratedUserId: v.string(),
+    rating: v.number(),
+    comment: v.optional(v.string()),
+    createdAt: v.number(),
+  })
+    .index("by_travelPackageId", ["travelPackageId"])
+    .index("by_ratedUserId", ["ratedUserId"])
+    .index("by_package_and_rated", ["travelPackageId", "ratedUserId"])
+    .index("by_package_and_rater", ["travelPackageId", "raterId"])
+    .index("by_package_rater_and_rated", ["travelPackageId", "raterId", "ratedUserId"]),
+
   todos: defineTable({
     text: v.string(),
     completed: v.boolean(),

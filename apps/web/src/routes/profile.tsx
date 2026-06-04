@@ -26,6 +26,7 @@ import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
 import { Input } from "@proy_vibetribe/ui/components/input";
 import { Label } from "@proy_vibetribe/ui/components/label";
 import { PageHeader } from "@/components/page-header";
+import { ReceivedRatingsList } from "@/components/received-ratings-list";
 
 export const Route = createFileRoute("/profile")({
   component: ProfileScreen,
@@ -245,6 +246,9 @@ function ProfileScreen() {
           </div>
         </section>
 
+        {/* Received Ratings (HU-15) */}
+        <ReceivedRatingsList userId={profile.userId} />
+
         {/* Activities and Stats */}
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold text-foreground px-1">Tu Actividad</h2>
@@ -340,7 +344,8 @@ function ProfileSkeleton() {
           <Skeleton className="h-20 w-full rounded-xl" />
           <Skeleton className="h-20 w-full rounded-xl" />
         </div>
-        <Skeleton className="h-64 w-full rounded-2xl mt-4" />
+        <Skeleton className="h-48 w-full rounded-2xl mt-4" />
+        <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
     </div>
   );

@@ -462,6 +462,11 @@ export const getById = query({
       .withIndex("by_travelPackageId", (q) => q.eq("travelPackageId", args.id))
       .collect();
 
+    const packageRatings = await ctx.db
+      .query("packageRatings")
+      .withIndex("by_travelPackageId", (q) => q.eq("travelPackageId", args.id))
+      .collect();
+
     // BT-09: retorna perfil de cada participante desde la tabla `profiles`.
     // avatarUrl ✅ disponible via profileInfo.avatarUrl
     // name ✅ obtenido directamente desde Better Auth con getAnyUserById
@@ -482,10 +487,23 @@ export const getById = query({
           // Fallback silencioso a "Viajero"
         }
 
+        const userRatings = packageRatings.filter((r) => r.ratedUserId === p.userId);
+        const ratingsCount = userRatings.length;
+        const packageRatingAverage =
+          ratingsCount > 0
+            ? userRatings.reduce((sum, r) => sum + r.rating, 0) / ratingsCount
+            : null;
+
         return {
           userId: p.userId,
           joinedAt: p.joinedAt,
           profileInfo: profile ? { ...profile, name } : { name },
+          packageRating: packageRatingAverage
+            ? {
+                average: packageRatingAverage,
+                count: ratingsCount,
+              }
+            : null,
         };
       })
     );
@@ -505,11 +523,36 @@ export const getById = query({
       // Fallback a "Organizador"
     }
 
+    const organizerRatings = packageRatings.filter(
+      (r) => r.ratedUserId === tPackage.creatorId
+    );
+    const organizerRatingsCount = organizerRatings.length;
+    const organizerPackageRatingAverage =
+      organizerRatingsCount > 0
+        ? organizerRatings.reduce((sum, r) => sum + r.rating, 0) /
+          organizerRatingsCount
+        : null;
+
+    const isFinished = tPackage.endDate <= Date.now();
+
     return {
       ...tPackage,
       activities,
       participants,
-      organizerInfo: organizerProfile ? { ...organizerProfile, name: organizerName } : { name: organizerName, averageRating: 5.0, avatarUrl: undefined },
+      organizerInfo: organizerProfile
+        ? { ...organizerProfile, name: organizerName }
+        : {
+            name: organizerName,
+            averageRating: 5.0,
+            avatarUrl: undefined,
+          },
+      organizerPackageRating: organizerPackageRatingAverage
+        ? {
+            average: organizerPackageRatingAverage,
+            count: organizerRatingsCount,
+          }
+        : null,
+      isFinished,
       statusLabel: STATUS_LABELS[tPackage.status] || tPackage.status,
     };
   },
