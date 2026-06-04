@@ -4,7 +4,7 @@ import { Input } from "@proy_vibetribe/ui/components/input";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 
 import { useCurrency } from "@/components/currency-provider";
-import { convertFromCop, convertToCop, formatPrice, type Currency } from "@/lib/currency";
+import { convertToCop, type Currency } from "@/lib/currency";
 
 interface PackageFiltersProps {
   searchQuery: string;
@@ -54,7 +54,7 @@ export function PackageFilters({
   priceRange,
   onPriceRangeChange,
 }: PackageFiltersProps) {
-  const { currency, formatPrice } = useCurrency();
+  const { currency, copPerUsd, formatPrice } = useCurrency();
   const maxPrice = MAX_PRICE_BY_CURRENCY[currency];
   const presets = PRICE_PRESETS_BY_CURRENCY[currency];
 
@@ -75,9 +75,9 @@ export function PackageFilters({
 
   const handlePresetClick = (min: number, max: number) => {
     const minCop =
-      currency === "COP" ? min : Math.round(convertToCop(min, currency));
+      currency === "COP" ? min : Math.round(convertToCop(min, currency, copPerUsd));
     const maxCop =
-      currency === "COP" ? max : Math.round(convertToCop(max, currency));
+      currency === "COP" ? max : Math.round(convertToCop(max, currency, copPerUsd));
     onPriceRangeChange([minCop, maxCop]);
   };
 

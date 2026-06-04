@@ -18,7 +18,11 @@ import {
   Camera,
   X,
   Save,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
+
+import { useCurrency } from "@/components/currency-provider";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
 import { Button } from "@proy_vibetribe/ui/components/button";
@@ -36,6 +40,8 @@ export const Route = createFileRoute("/profile")({
 function ProfileScreen() {
   const profile = useQuery(api.profiles.getMine);
   const updateProfile = useMutation(api.profiles.updateMine);
+  const { copPerUsd, isStale, isFallback, source, updatedAt, refreshRate } =
+    useCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
@@ -322,6 +328,15 @@ function ProfileScreen() {
               </div>
             </div>
           </div>
+
+          <ExchangeRateInfo
+            copPerUsd={copPerUsd}
+            isStale={isStale}
+            isFallback={isFallback}
+            source={source}
+            updatedAt={updatedAt}
+            onRefresh={refreshRate}
+          />
         </section>
 
         {/* Received Ratings (HU-15) */}
@@ -425,6 +440,88 @@ function ProfileSkeleton() {
         <Skeleton className="h-48 w-full rounded-2xl mt-4" />
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
+    </div>
+  );
+}
+
+function formatRateAge(updatedAt: number): string {
+  if (updatedAt === 0) return "nunca";
+  const diffMs = Date.now() - updatedAt;
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "hace un momento";
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days} d`;
+}
+
+function ExchangeRateInfo({
+  copPerUsd,
+  isStale,
+  isFallback,
+  source,
+  updatedAt,
+  onRefresh,
+}: {
+  copPerUsd: number;
+  isStale: boolean;
+  isFallback: boolean;
+  source: string;
+  updatedAt: number;
+  onRefresh: () => Promise<void>;
+}) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleClick = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+      <TrendingUp className="h-3 w-3" />
+      <span>
+        1 USD ={" "}
+        <span className="font-semibold text-foreground">
+          {copPerUsd.toLocaleString("es-CO", { maximumFractionDigits: 0 })}
+        </span>{" "}
+        COP
+      </span>
+      <span className="text-border">|</span>
+      <span>
+        {isFallback
+          ? "tasa por defecto"
+          : `actualizada ${formatRateAge(updatedAt)}`}
+      </span>
+      {!isFallback && source && source !== "fallback" && (
+        <span className="text-border">|</span>
+      )}
+      {!isFallback && source && source !== "fallback" && (
+        <span className="opacity-70">{source}</span>
+      )}
+      {isStale && !isFallback && (
+        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+          (desactualizada)
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isRefreshing}
+        className="ml-1 p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-50"
+        title="Actualizar tasa"
+        aria-label="Actualizar tasa de cambio"
+      >
+        <RefreshCw
+          className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`}
+        />
+      </button>
     </div>
   );
 }

@@ -9,6 +9,8 @@
  */
 
 import type * as auth from "../auth.js";
+import type * as crons from "../crons.js";
+import type * as currency from "../currency.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as packages from "../packages.js";
@@ -27,6 +29,8 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   auth: typeof auth;
+  crons: typeof crons;
+  currency: typeof currency;
   healthCheck: typeof healthCheck;
   http: typeof http;
   packages: typeof packages;

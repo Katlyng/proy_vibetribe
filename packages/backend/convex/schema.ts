@@ -105,6 +105,13 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_reporter_and_reported", ["reporterId", "reportedUserId"]),
 
+  currencyRates: defineTable({
+    base: v.string(),
+    target: v.string(),
+    copPerUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_base_and_target", ["base", "target"]),
+
   todos: defineTable({
     text: v.string(),
     completed: v.boolean(),

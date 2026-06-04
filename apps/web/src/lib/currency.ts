@@ -7,31 +7,36 @@ export const CURRENCY_OPTIONS: { value: Currency; label: string; symbol: string 
   { value: "USD", label: "Dólares estadounidenses (USD)", symbol: "US$" },
 ];
 
-export const COP_PER_USD = 4000;
+export const FALLBACK_COP_PER_USD = 4000;
 
 export function convertFromCop(
   amountInCop: number,
-  targetCurrency: Currency
+  targetCurrency: Currency,
+  copPerUsd: number
 ): number {
   if (!Number.isFinite(amountInCop)) return 0;
   if (targetCurrency === "COP") return amountInCop;
-  return amountInCop / COP_PER_USD;
+  const rate = copPerUsd > 0 ? copPerUsd : FALLBACK_COP_PER_USD;
+  return amountInCop / rate;
 }
 
 export function convertToCop(
   amount: number,
-  fromCurrency: Currency
+  fromCurrency: Currency,
+  copPerUsd: number
 ): number {
   if (!Number.isFinite(amount)) return 0;
   if (fromCurrency === "COP") return amount;
-  return amount * COP_PER_USD;
+  const rate = copPerUsd > 0 ? copPerUsd : FALLBACK_COP_PER_USD;
+  return amount * rate;
 }
 
 export function formatPrice(
   amountInCop: number,
-  currency: Currency = DEFAULT_CURRENCY
+  currency: Currency = DEFAULT_CURRENCY,
+  copPerUsd: number = FALLBACK_COP_PER_USD
 ): string {
-  const value = convertFromCop(amountInCop, currency);
+  const value = convertFromCop(amountInCop, currency, copPerUsd);
   if (currency === "COP") {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
@@ -48,9 +53,10 @@ export function formatPrice(
 
 export function formatPriceCompact(
   amountInCop: number,
-  currency: Currency = DEFAULT_CURRENCY
+  currency: Currency = DEFAULT_CURRENCY,
+  copPerUsd: number = FALLBACK_COP_PER_USD
 ): string {
-  const value = convertFromCop(amountInCop, currency);
+  const value = convertFromCop(amountInCop, currency, copPerUsd);
   if (currency === "COP") {
     return new Intl.NumberFormat("es-CO", {
       style: "currency",
