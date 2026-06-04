@@ -28,6 +28,7 @@ export const getMine = query({
         favoriteDestinations: [],
         averageRating: 5.0,
         totalRatings: 0,
+        preferredCurrency: "COP",
         updatedAt: Date.now(),
       };
     }
@@ -47,6 +48,7 @@ export const updateMine = mutation({
     description: v.optional(v.string()),
     favoriteDestinations: v.optional(v.array(v.string())),
     avatarUrl: v.optional(v.string()),
+    preferredCurrency: v.optional(v.union(v.literal("COP"), v.literal("USD"))),
   },
   handler: async (ctx, args) => {
     const user = await authComponent.safeGetAuthUser(ctx);
@@ -71,6 +73,7 @@ export const updateMine = mutation({
         description: args.description ?? profile.description,
         favoriteDestinations: favDests ?? profile.favoriteDestinations,
         avatarUrl: args.avatarUrl ?? profile.avatarUrl,
+        preferredCurrency: args.preferredCurrency ?? profile.preferredCurrency,
         updatedAt: Date.now(),
       });
     } else {
@@ -81,6 +84,7 @@ export const updateMine = mutation({
         avatarUrl: args.avatarUrl,
         averageRating: 5.0,
         totalRatings: 0,
+        preferredCurrency: args.preferredCurrency ?? "COP",
         updatedAt: Date.now(),
       });
     }

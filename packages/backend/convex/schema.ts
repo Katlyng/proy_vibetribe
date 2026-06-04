@@ -9,6 +9,7 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     averageRating: v.number(), // 1.0 to 5.0
     totalRatings: v.number(),
+    preferredCurrency: v.optional(v.union(v.literal("COP"), v.literal("USD"))),
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
 
