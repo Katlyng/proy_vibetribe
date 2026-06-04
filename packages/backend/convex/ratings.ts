@@ -254,3 +254,65 @@ export const getRatingsReceivedByUserInPackage = query({
       .collect();
   },
 });
+
+const ratingReceivedValidator = v.object({
+  _id: v.id("packageRatings"),
+  _creationTime: v.number(),
+  travelPackageId: v.id("travelPackages"),
+  travelPackageTitle: v.string(),
+  rating: v.number(),
+  comment: v.optional(v.string()),
+  createdAt: v.number(),
+  rater: v.object({
+    userId: v.string(),
+    name: v.string(),
+    avatarUrl: v.optional(v.string()),
+  }),
+});
+
+export const getRatingsReceivedByUser = query({
+  args: { userId: v.string() },
+  returns: v.array(ratingReceivedValidator),
+  handler: async (ctx, args) => {
+    const ratings = await ctx.db
+      .query("packageRatings")
+      .withIndex("by_ratedUserId", (q) => q.eq("ratedUserId", args.userId))
+      .order("desc")
+      .collect();
+
+    return await Promise.all(
+      ratings.map(async (r) => {
+        const tPackage = await ctx.db.get(r.travelPackageId);
+        const raterProfile = await ctx.db
+          .query("profiles")
+          .withIndex("by_userId", (q) => q.eq("userId", r.raterId))
+          .first();
+
+        let raterName = "Viajero";
+        try {
+          const authUser = await authComponent.getAnyUserById(ctx, r.raterId);
+          if (authUser && authUser.name) {
+            raterName = authUser.name;
+          }
+        } catch {
+          // Fallback silencioso a "Viajero"
+        }
+
+        return {
+          _id: r._id,
+          _creationTime: r._creationTime,
+          travelPackageId: r.travelPackageId,
+          travelPackageTitle: tPackage?.title || "Viaje",
+          rating: r.rating,
+          comment: r.comment,
+          createdAt: r.createdAt,
+          rater: {
+            userId: r.raterId,
+            name: raterName,
+            avatarUrl: raterProfile?.avatarUrl ?? undefined,
+          },
+        };
+      })
+    );
+  },
+});
