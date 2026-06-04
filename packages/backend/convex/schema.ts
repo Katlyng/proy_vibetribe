@@ -112,6 +112,18 @@ export default defineSchema({
     updatedAt: v.number(),
   }).index("by_base_and_target", ["base", "target"]),
 
+  tripPhotos: defineTable({
+    userId: v.string(),
+    travelPackageId: v.id("travelPackages"),
+    storageId: v.id("_storage"),
+    caption: v.optional(v.string()),
+    uploadedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_travelPackageId", ["travelPackageId"])
+    .index("by_userId_and_package", ["userId", "travelPackageId"])
+    .index("by_userId_uploadedAt", ["userId", "uploadedAt"]),
+
   todos: defineTable({
     text: v.string(),
     completed: v.boolean(),

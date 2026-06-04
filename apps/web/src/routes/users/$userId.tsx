@@ -12,6 +12,7 @@ import { Skeleton } from "@proy_vibetribe/ui/components/skeleton";
 import { Button } from "@proy_vibetribe/ui/components/button";
 import { PageHeader } from "@/components/page-header";
 import { ReportUserDialog } from "@/components/report-user-dialog";
+import { TripPhotosGrid } from "@/components/trip-photos-grid";
 
 export const Route = createFileRoute("/users/$userId")({
   component: UserProfileScreen,
@@ -43,6 +44,8 @@ function UserProfileScreen() {
   const canReport =
     !!myProfile &&
     myProfile.userId !== userId;
+
+  const isOwner = !!myProfile && myProfile.userId === userId;
 
   const displayName = profile.name || "Viajero";
   const reportButtonLabel = `Reportar a ${displayName.split(" ")[0]}`;
@@ -118,6 +121,13 @@ function UserProfileScreen() {
             </div>
           </section>
         )}
+
+        {/* Trip Photos (HU-05) */}
+        <TripPhotosGrid
+          userId={userId}
+          isOwner={isOwner}
+          showEmptyState={isOwner}
+        />
 
         {/* Created Packages */}
         {profile.createdPackages && profile.createdPackages.length > 0 && (
