@@ -42,7 +42,7 @@ export const addTripPhoto = mutation({
 
     const storageMeta = await ctx.db.system.get("_storage", args.storageId);
     if (!storageMeta) {
-      throw new ConvexError("El archivo subido no se encontró");
+      throw new ConvexError("El archivo subido no se pudo encontrar. Asegúrate de subir la foto antes de agregarla al viaje.");
     }
     if (
       !storageMeta.contentType ||
