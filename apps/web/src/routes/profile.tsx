@@ -31,6 +31,8 @@ import { Input } from "@proy_vibetribe/ui/components/input";
 import { Label } from "@proy_vibetribe/ui/components/label";
 import { PageHeader } from "@/components/page-header";
 import { ReceivedRatingsList } from "@/components/received-ratings-list";
+import { TripPhotosGrid } from "@/components/trip-photos-grid";
+import { UploadPhotosDialog } from "@/components/upload-photos-dialog";
 import { CURRENCY_OPTIONS, type Currency } from "@/lib/currency";
 
 export const Route = createFileRoute("/profile")({
@@ -44,6 +46,7 @@ function ProfileScreen() {
     useCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showUploadPhotos, setShowUploadPhotos] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [favoritesDraft, setFavoritesDraft] = useState("");
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
@@ -339,6 +342,13 @@ function ProfileScreen() {
           />
         </section>
 
+        {/* Trip Photos (HU-05) */}
+        <TripPhotosGrid
+          userId={profile.userId}
+          isOwner={true}
+          onUploadClick={() => setShowUploadPhotos(true)}
+        />
+
         {/* Received Ratings (HU-15) */}
         <ReceivedRatingsList userId={profile.userId} />
 
@@ -423,6 +433,11 @@ function ProfileScreen() {
         </section>
 
       </div>
+
+      <UploadPhotosDialog
+        open={showUploadPhotos}
+        onOpenChange={setShowUploadPhotos}
+      />
     </div>
   );
 }

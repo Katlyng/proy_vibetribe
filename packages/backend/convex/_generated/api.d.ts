@@ -14,6 +14,7 @@ import type * as currency from "../currency.js";
 import type * as healthCheck from "../healthCheck.js";
 import type * as http from "../http.js";
 import type * as packages from "../packages.js";
+import type * as photos from "../photos.js";
 import type * as privateData from "../privateData.js";
 import type * as profiles from "../profiles.js";
 import type * as ratings from "../ratings.js";
@@ -34,6 +35,7 @@ declare const fullApi: ApiFromModules<{
   healthCheck: typeof healthCheck;
   http: typeof http;
   packages: typeof packages;
+  photos: typeof photos;
   privateData: typeof privateData;
   profiles: typeof profiles;
   ratings: typeof ratings;
