@@ -9,6 +9,7 @@ export default defineSchema({
     avatarUrl: v.optional(v.string()),
     averageRating: v.number(), // 1.0 to 5.0
     totalRatings: v.number(),
+    preferredCurrency: v.optional(v.union(v.literal("COP"), v.literal("USD"))),
     updatedAt: v.number(),
   }).index("by_userId", ["userId"]),
 
@@ -79,6 +80,37 @@ export default defineSchema({
     .index("by_package_and_rated", ["travelPackageId", "ratedUserId"])
     .index("by_package_and_rater", ["travelPackageId", "raterId"])
     .index("by_package_rater_and_rated", ["travelPackageId", "raterId", "ratedUserId"]),
+
+  userReports: defineTable({
+    reporterId: v.string(),
+    reportedUserId: v.string(),
+    reason: v.union(
+      v.literal("harassment"),
+      v.literal("offensive_language"),
+      v.literal("spam"),
+      v.literal("fraud"),
+      v.literal("rule_violation"),
+      v.literal("other")
+    ),
+    details: v.optional(v.string()),
+    status: v.union(
+      v.literal("pending"),
+      v.literal("reviewed"),
+      v.literal("dismissed")
+    ),
+    createdAt: v.number(),
+  })
+    .index("by_reporterId", ["reporterId"])
+    .index("by_reportedUserId", ["reportedUserId"])
+    .index("by_status", ["status"])
+    .index("by_reporter_and_reported", ["reporterId", "reportedUserId"]),
+
+  currencyRates: defineTable({
+    base: v.string(),
+    target: v.string(),
+    copPerUsd: v.number(),
+    updatedAt: v.number(),
+  }).index("by_base_and_target", ["base", "target"]),
 
   todos: defineTable({
     text: v.string(),

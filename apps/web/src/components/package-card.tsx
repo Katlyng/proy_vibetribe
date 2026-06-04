@@ -6,24 +6,18 @@ import { MapPin, Users, Calendar, Star, Package as PackageIcon } from "lucide-re
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 
 import type { Doc } from "@proy_vibetribe/backend/convex/_generated/dataModel";
+import { useCurrency } from "@/components/currency-provider";
 
 interface PackageCardProps {
   package: Doc<"travelPackages"> & { statusLabel?: string };
 }
-
-const formatPrice = (price: number) => {
-  return new Intl.NumberFormat("es-CO", {
-    style: "currency",
-    currency: "COP",
-    minimumFractionDigits: 0,
-  }).format(price);
-};
 
 const formatDate = (timestamp: number) => {
   return format(new Date(timestamp), "MMM d", { locale: es });
 };
 
 export function PackageCard({ package: pkg }: PackageCardProps) {
+  const { formatPrice } = useCurrency();
   const availableSpots = pkg.maxParticipants - pkg.currentParticipants;
   const hasImage = pkg.imageUrl && pkg.imageUrl.length > 0;
 

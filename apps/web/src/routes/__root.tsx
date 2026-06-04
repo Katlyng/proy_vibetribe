@@ -7,6 +7,7 @@ import {
 import { TanStackRouterDevtools } from "@tanstack/react-router-devtools";
 
 import { ThemeProvider } from "@/components/theme-provider";
+import { CurrencyProvider } from "@/components/currency-provider";
 
 import "../index.css";
 
@@ -44,8 +45,10 @@ function RootComponent() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <Outlet />
-        <Toaster richColors />
+        <CurrencyProvider>
+          <Outlet />
+          <Toaster richColors />
+        </CurrencyProvider>
       </ThemeProvider>
       <TanStackRouterDevtools position="bottom-left" />
     </>

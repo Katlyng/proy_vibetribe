@@ -133,6 +133,7 @@ export const rateParticipant = mutation({
         favoriteDestinations: [],
         averageRating: newAverage,
         totalRatings,
+        preferredCurrency: "COP",
         updatedAt: Date.now(),
       });
     }

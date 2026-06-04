@@ -18,7 +18,11 @@ import {
   Camera,
   X,
   Save,
+  RefreshCw,
+  TrendingUp,
 } from "lucide-react";
+
+import { useCurrency } from "@/components/currency-provider";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@proy_vibetribe/ui/components/avatar";
 import { Button } from "@proy_vibetribe/ui/components/button";
@@ -27,6 +31,7 @@ import { Input } from "@proy_vibetribe/ui/components/input";
 import { Label } from "@proy_vibetribe/ui/components/label";
 import { PageHeader } from "@/components/page-header";
 import { ReceivedRatingsList } from "@/components/received-ratings-list";
+import { CURRENCY_OPTIONS, type Currency } from "@/lib/currency";
 
 export const Route = createFileRoute("/profile")({
   component: ProfileScreen,
@@ -35,11 +40,14 @@ export const Route = createFileRoute("/profile")({
 function ProfileScreen() {
   const profile = useQuery(api.profiles.getMine);
   const updateProfile = useMutation(api.profiles.updateMine);
+  const { copPerUsd, isStale, isFallback, source, updatedAt, refreshRate } =
+    useCurrency();
 
   const [isEditing, setIsEditing] = useState(false);
   const [descriptionDraft, setDescriptionDraft] = useState("");
   const [favoritesDraft, setFavoritesDraft] = useState("");
   const [avatarDraft, setAvatarDraft] = useState<string | null>(null);
+  const [currencyDraft, setCurrencyDraft] = useState<Currency>("COP");
   const [isSaving, setIsSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -51,6 +59,7 @@ function ProfileScreen() {
     setDescriptionDraft((profile as any).description || "");
     setFavoritesDraft(((profile as any).favoriteDestinations || []).join(", "));
     setAvatarDraft(profile?.avatarUrl || null);
+    setCurrencyDraft(((profile as any).preferredCurrency as Currency) || "COP");
     setIsEditing(true);
   };
 
@@ -66,6 +75,7 @@ function ProfileScreen() {
         description: descriptionDraft.trim(),
         favoriteDestinations,
         avatarUrl: avatarDraft || undefined,
+        preferredCurrency: currencyDraft,
       });
       toast.success("Perfil actualizado correctamente");
       setIsEditing(false);
@@ -183,7 +193,7 @@ function ProfileScreen() {
 
             <div className="space-y-2">
               <Label>Destinos Favoritos</Label>
-              <Input 
+              <Input
                 value={favoritesDraft}
                 onChange={(e) => setFavoritesDraft(e.target.value)}
                 placeholder="Ej: Kyoto, Cusco, Cartagena"
@@ -191,8 +201,38 @@ function ProfileScreen() {
               <p className="text-xs text-muted-foreground">Sepáralos con comas.</p>
             </div>
 
-            <Button 
-              className="w-full mt-4 flex items-center gap-2" 
+            <div className="space-y-2">
+              <Label>Moneda preferida</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {CURRENCY_OPTIONS.map((opt) => {
+                  const selected = currencyDraft === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setCurrencyDraft(opt.value)}
+                      disabled={isSaving}
+                      className={`flex flex-col items-start gap-0.5 p-3 rounded-lg border text-left transition-colors ${
+                        selected
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:bg-muted/50"
+                      }`}
+                    >
+                      <span className="text-sm font-semibold">{opt.value}</span>
+                      <span className="text-[11px] text-muted-foreground leading-tight">
+                        {opt.label.replace(` (${opt.value})`, "")}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Los precios se mostrarán en esta moneda en toda la app.
+              </p>
+            </div>
+
+            <Button
+              className="w-full mt-4 flex items-center gap-2"
               onClick={handleSaveProfile}
               disabled={isSaving}
             >
@@ -244,6 +284,59 @@ function ProfileScreen() {
               </div>
             </div>
           </div>
+
+          <div className="mt-5 pt-5 border-t w-full">
+            <p className="text-xs text-muted-foreground text-center mb-2">
+              Moneda preferida
+            </p>
+            <div className="flex justify-center">
+              <div className="inline-flex rounded-full border bg-muted/30 p-1 gap-1">
+                {CURRENCY_OPTIONS.map((opt) => {
+                  const isActive =
+                    ((profile as any).preferredCurrency || "COP") === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={async () => {
+                        try {
+                          await updateProfile({ preferredCurrency: opt.value });
+                          toast.success(
+                            `Moneda cambiada a ${opt.value}`
+                          );
+                        } catch (e) {
+                          console.error("Error al cambiar moneda:", e);
+                          toast.error(
+                            `No se pudo cambiar la moneda${
+                              e instanceof Error && e.message
+                                ? `: ${e.message}`
+                                : ""
+                            }`
+                          );
+                        }
+                      }}
+                      className={`px-4 py-1.5 text-xs font-semibold rounded-full transition-colors ${
+                        isActive
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      {opt.value}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          <ExchangeRateInfo
+            copPerUsd={copPerUsd}
+            isStale={isStale}
+            isFallback={isFallback}
+            source={source}
+            updatedAt={updatedAt}
+            onRefresh={refreshRate}
+          />
         </section>
 
         {/* Received Ratings (HU-15) */}
@@ -347,6 +440,88 @@ function ProfileSkeleton() {
         <Skeleton className="h-48 w-full rounded-2xl mt-4" />
         <Skeleton className="h-64 w-full rounded-2xl" />
       </div>
+    </div>
+  );
+}
+
+function formatRateAge(updatedAt: number): string {
+  if (updatedAt === 0) return "nunca";
+  const diffMs = Date.now() - updatedAt;
+  const minutes = Math.floor(diffMs / 60_000);
+  if (minutes < 1) return "hace un momento";
+  if (minutes < 60) return `hace ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `hace ${hours} h`;
+  const days = Math.floor(hours / 24);
+  return `hace ${days} d`;
+}
+
+function ExchangeRateInfo({
+  copPerUsd,
+  isStale,
+  isFallback,
+  source,
+  updatedAt,
+  onRefresh,
+}: {
+  copPerUsd: number;
+  isStale: boolean;
+  isFallback: boolean;
+  source: string;
+  updatedAt: number;
+  onRefresh: () => Promise<void>;
+}) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleClick = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+      <TrendingUp className="h-3 w-3" />
+      <span>
+        1 USD ={" "}
+        <span className="font-semibold text-foreground">
+          {copPerUsd.toLocaleString("es-CO", { maximumFractionDigits: 0 })}
+        </span>{" "}
+        COP
+      </span>
+      <span className="text-border">|</span>
+      <span>
+        {isFallback
+          ? "tasa por defecto"
+          : `actualizada ${formatRateAge(updatedAt)}`}
+      </span>
+      {!isFallback && source && source !== "fallback" && (
+        <span className="text-border">|</span>
+      )}
+      {!isFallback && source && source !== "fallback" && (
+        <span className="opacity-70">{source}</span>
+      )}
+      {isStale && !isFallback && (
+        <span className="text-amber-600 dark:text-amber-400 font-semibold">
+          (desactualizada)
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={isRefreshing}
+        className="ml-1 p-1 rounded-full hover:bg-muted transition-colors disabled:opacity-50"
+        title="Actualizar tasa"
+        aria-label="Actualizar tasa de cambio"
+      >
+        <RefreshCw
+          className={`h-3 w-3 ${isRefreshing ? "animate-spin" : ""}`}
+        />
+      </button>
     </div>
   );
 }

@@ -23,6 +23,7 @@ import {
 } from "@proy_vibetribe/ui/components/alert-dialog";
 import { PageHeader } from "@/components/page-header";
 import { ParticipantsList } from "@/components/participants-list";
+import { useCurrency } from "@/components/currency-provider";
 
 export const Route = createFileRoute("/packages/$id")({
   component: PackageLayoutRoute,
@@ -47,6 +48,7 @@ function PackageDetailsScreen() {
   const profile = useQuery(api.profiles.getMine);
   const joinMutation = useMutation(api.packages.joinPackage);
   const leaveMutation = useMutation(api.packages.leavePackage);
+  const { formatPrice } = useCurrency();
 
   const [isJoining, setIsJoining] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -147,7 +149,7 @@ function PackageDetailsScreen() {
         {/* Quick Stats */}
         <div className="grid grid-cols-2 gap-3">
           <StatCard icon={<Calendar className="h-5 w-5" />} label="Duración" value={`${pkg.durationDays} días`} />
-          <StatCard icon={<Coins className="h-5 w-5" />} label="Precio" value={`$${pkg.price?.toLocaleString("es-CO") || 0}`} />
+          <StatCard icon={<Coins className="h-5 w-5" />} label="Precio" value={formatPrice(pkg.price || 0)} />
           <StatCard icon={<Users className="h-5 w-5" />} label="Cupos" value={`${pkg.currentParticipants}/${pkg.maxParticipants}`} />
           <StatCard icon={<Star className="h-5 w-5" />} label="Rating" value={pkg.organizerInfo?.averageRating?.toFixed(1) || "N/A"} />
         </div>
@@ -227,7 +229,7 @@ function PackageDetailsScreen() {
                       <div className="flex items-start justify-between gap-2 mb-1">
                         <h4 className="font-bold text-base">{activity.title}</h4>
                         <Badge variant={activity.isIncluded ? "secondary" : "outline"} className="text-[10px] shrink-0">
-                          {activity.isIncluded ? "Incluido" : `+ $${activity.cost?.toLocaleString("es-CO") || 0}`}
+                          {activity.isIncluded ? "Incluido" : `+ ${formatPrice(activity.cost || 0)}`}
                         </Badge>
                       </div>
                       
@@ -298,7 +300,7 @@ function PackageDetailsScreen() {
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-xl border-t flex items-center justify-between gap-4">
         <div>
           <span className="text-xs text-muted-foreground">Precio Total</span>
-          <p className="text-xl font-bold">${pkg.price?.toLocaleString("es-CO")}</p>
+          <p className="text-xl font-bold">{formatPrice(pkg.price || 0)}</p>
         </div>
 
         {isCreator ? (

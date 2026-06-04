@@ -3,6 +3,9 @@ import { Button } from "@proy_vibetribe/ui/components/button";
 import { Input } from "@proy_vibetribe/ui/components/input";
 import { Badge } from "@proy_vibetribe/ui/components/badge";
 
+import { useCurrency } from "@/components/currency-provider";
+import { convertToCop, type Currency } from "@/lib/currency";
+
 interface PackageFiltersProps {
   searchQuery: string;
   onSearchChange: (query: string) => void;
@@ -22,6 +25,27 @@ const AVAILABLE_TAGS = [
   "naturaleza",
 ];
 
+const PRICE_PRESETS_BY_CURRENCY: Record<
+  Currency,
+  { min: number; max: number; label: string }[]
+> = {
+  COP: [
+    { min: 0, max: 200000, label: "Hasta 200K" },
+    { min: 200000, max: 350000, label: "200K - 350K" },
+    { min: 350000, max: 500000, label: "350K+" },
+  ],
+  USD: [
+    { min: 0, max: 50, label: "Hasta US$50" },
+    { min: 50, max: 100, label: "US$50 - 100" },
+    { min: 100, max: 500, label: "US$100+" },
+  ],
+};
+
+const MAX_PRICE_BY_CURRENCY: Record<Currency, number> = {
+  COP: 500000,
+  USD: 500,
+};
+
 export function PackageFilters({
   searchQuery,
   onSearchChange,
@@ -30,12 +54,31 @@ export function PackageFilters({
   priceRange,
   onPriceRangeChange,
 }: PackageFiltersProps) {
-  const hasFilters = searchQuery || selectedTag || priceRange[0] > 0 || priceRange[1] < 500000;
+  const { currency, copPerUsd, formatPrice } = useCurrency();
+  const maxPrice = MAX_PRICE_BY_CURRENCY[currency];
+  const presets = PRICE_PRESETS_BY_CURRENCY[currency];
+
+  const hasFilters =
+    searchQuery ||
+    selectedTag ||
+    priceRange[0] > 0 ||
+    priceRange[1] < 500000;
 
   const clearAllFilters = () => {
     onSearchChange("");
     onTagSelect(null);
     onPriceRangeChange([0, 500000]);
+  };
+
+  const isPresetActive = (min: number, max: number) =>
+    priceRange[0] === min && priceRange[1] === max;
+
+  const handlePresetClick = (min: number, max: number) => {
+    const minCop =
+      currency === "COP" ? min : Math.round(convertToCop(min, currency, copPerUsd));
+    const maxCop =
+      currency === "COP" ? max : Math.round(convertToCop(max, currency, copPerUsd));
+    onPriceRangeChange([minCop, maxCop]);
   };
 
   return (
@@ -100,7 +143,9 @@ export function PackageFilters({
       {/* Price Range */}
       <div className="flex flex-col gap-2">
         <div className="flex flex-row items-center justify-between">
-          <label className="text-sm font-semibold text-foreground">Rango de Precio</label>
+          <label className="text-sm font-semibold text-foreground">
+            Rango de Precio ({currency})
+          </label>
           <Button
             variant="ghost"
             size="sm"
@@ -112,35 +157,20 @@ export function PackageFilters({
           </Button>
         </div>
         <span className="text-xs text-muted-foreground">
-          ${priceRange[0].toLocaleString("es-CO")} - ${priceRange[1].toLocaleString("es-CO")}
+          {formatPrice(priceRange[0])} - {formatPrice(priceRange[1])}
         </span>
         <div className="flex flex-wrap gap-2 mt-1">
-          <Button
-            variant={priceRange[1] <= 200000 ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPriceRangeChange([0, 200000])}
-            className="flex-1 text-xs"
-          >
-            Hasta 200K
-          </Button>
-          <Button
-            variant={
-              priceRange[0] >= 200000 && priceRange[1] <= 350000 ? "default" : "outline"
-            }
-            size="sm"
-            onClick={() => onPriceRangeChange([200000, 350000])}
-            className="flex-1 text-xs"
-          >
-            200K - 350K
-          </Button>
-          <Button
-            variant={priceRange[0] >= 350000 ? "default" : "outline"}
-            size="sm"
-            onClick={() => onPriceRangeChange([350000, 500000])}
-            className="flex-1 text-xs"
-          >
-            350K+
-          </Button>
+          {presets.map((p) => (
+            <Button
+              key={`${p.min}-${p.max}`}
+              variant={isPresetActive(p.min, p.max) ? "default" : "outline"}
+              size="sm"
+              onClick={() => handlePresetClick(p.min, p.max)}
+              className="flex-1 text-xs"
+            >
+              {p.label}
+            </Button>
+          ))}
         </div>
       </div>
 
