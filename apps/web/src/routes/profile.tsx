@@ -20,7 +20,9 @@ import {
   Save,
   RefreshCw,
   TrendingUp,
+  Shield,
 } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 
 import { useCurrency } from "@/components/currency-provider";
 
@@ -352,6 +354,9 @@ function ProfileScreen() {
         {/* Received Ratings (HU-15) */}
         <ReceivedRatingsList userId={profile.userId} />
 
+        {/* Admin Panel link (only for admins) */}
+        <AdminPanelLink />
+
         {/* Activities and Stats */}
         <section className="flex flex-col gap-3">
           <h2 className="text-lg font-bold text-foreground px-1">Tu Actividad</h2>
@@ -538,5 +543,27 @@ function ExchangeRateInfo({
         />
       </button>
     </div>
+  );
+}
+
+function AdminPanelLink() {
+  const adminStatus = useQuery(api.admin.getMyAdminStatus);
+  if (!adminStatus?.isAdmin) return null;
+
+  return (
+    <Link to="/admin/reports" className="block">
+      <section className="bg-destructive/5 border-2 border-destructive/30 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all flex items-center gap-3">
+        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center shrink-0">
+          <Shield className="h-6 w-6 text-destructive" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-destructive">Panel de administración</p>
+          <p className="text-xs text-muted-foreground">
+            Revisa reportes y modera usuarios
+          </p>
+        </div>
+        <ChevronRight className="h-5 w-5 text-destructive shrink-0" />
+      </section>
+    </Link>
   );
 }

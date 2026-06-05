@@ -15,6 +15,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as UsersUserIdRouteImport } from './routes/users/$userId'
 import { Route as PackagesCreateRouteImport } from './routes/packages/create'
 import { Route as PackagesIdRouteImport } from './routes/packages/$id'
+import { Route as AdminReportsRouteImport } from './routes/admin/reports'
 import { Route as PackagesIdEditRouteImport } from './routes/packages/$id/edit'
 
 const ProfileRoute = ProfileRouteImport.update({
@@ -47,6 +48,11 @@ const PackagesIdRoute = PackagesIdRouteImport.update({
   path: '/packages/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminReportsRoute = AdminReportsRouteImport.update({
+  id: '/admin/reports',
+  path: '/admin/reports',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PackagesIdEditRoute = PackagesIdEditRouteImport.update({
   id: '/edit',
   path: '/edit',
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
   '/users/$userId': typeof UsersUserIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
   '/users/$userId': typeof UsersUserIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
+  '/admin/reports': typeof AdminReportsRoute
   '/packages/$id': typeof PackagesIdRouteWithChildren
   '/packages/create': typeof PackagesCreateRoute
   '/users/$userId': typeof UsersUserIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/profile'
+    | '/admin/reports'
     | '/packages/$id'
     | '/packages/create'
     | '/users/$userId'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/profile'
+    | '/admin/reports'
     | '/packages/$id'
     | '/packages/create'
     | '/users/$userId'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/dashboard'
     | '/profile'
+    | '/admin/reports'
     | '/packages/$id'
     | '/packages/create'
     | '/users/$userId'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
   ProfileRoute: typeof ProfileRoute
+  AdminReportsRoute: typeof AdminReportsRoute
   PackagesIdRoute: typeof PackagesIdRouteWithChildren
   PackagesCreateRoute: typeof PackagesCreateRoute
   UsersUserIdRoute: typeof UsersUserIdRoute
@@ -164,6 +177,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PackagesIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/reports': {
+      id: '/admin/reports'
+      path: '/admin/reports'
+      fullPath: '/admin/reports'
+      preLoaderRoute: typeof AdminReportsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/packages/$id/edit': {
       id: '/packages/$id/edit'
       path: '/edit'
@@ -190,6 +210,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
   ProfileRoute: ProfileRoute,
+  AdminReportsRoute: AdminReportsRoute,
   PackagesIdRoute: PackagesIdRouteWithChildren,
   PackagesCreateRoute: PackagesCreateRoute,
   UsersUserIdRoute: UsersUserIdRoute,
