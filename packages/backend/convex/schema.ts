@@ -124,6 +124,17 @@ export default defineSchema({
     .index("by_userId_and_package", ["userId", "travelPackageId"])
     .index("by_userId_uploadedAt", ["userId", "uploadedAt"]),
 
+  userModeration: defineTable({
+    userId: v.string(),
+    isBanned: v.boolean(),
+    bannedAt: v.optional(v.number()),
+    bannedBy: v.optional(v.string()),
+    banReason: v.optional(v.string()),
+    updatedAt: v.number(),
+  })
+    .index("by_userId", ["userId"])
+    .index("by_banned", ["isBanned"]),
+
   todos: defineTable({
     text: v.string(),
     completed: v.boolean(),
